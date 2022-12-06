@@ -21,6 +21,6 @@ extension SuiAddress{
             self = SuiAddress(value: str)
             return
         }
-        throw SuiError.RPCError.DecodingError("HexString Decoder Error")
+        throw SuiError.RPCError.DecodingError("SuiAddress Decoder Error")
     }
 }
