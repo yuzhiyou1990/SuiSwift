@@ -7,7 +7,9 @@
 
 import Foundation
 import PromiseKit
-// 参考:
+
+//参考:https://github.com/MystenLabs/sui/blob/7a67d61e2a1b1e23281483e1eff24284e0bcacbe/sdk/typescript/src/signers/txn-data-serializers/call-arg-serializer.ts
+
 public class SuiCallArgSerializer{
     static let MOVE_CALL_SER_ERROR = "Move call argument serialization error:"
     var provider: SuiJsonRpcProvider
