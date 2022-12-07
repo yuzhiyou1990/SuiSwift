@@ -9,6 +9,30 @@ import Foundation
 import PromiseKit
 import BigInt
 
+public protocol SuiUnserializedSignableTransaction{
+    //
+    var gasBudget: UInt64{get}
+    //
+    func gasObjectId() -> SuiObjectId?
+    //asynchronous
+    func bcsTransaction() -> Promise<SuiTransaction>
+    /**
+      * Returns a list of object ids used in the transaction, including the gas payment object
+      */
+    func extractObjectIds() throws -> [SuiObjectId]
+}
+
+// SuiMergeCoinTransaction || SuiSplitCoinTransaction
+extension SuiUnserializedSignableTransaction{
+    func getCoinStructTag(coin: SuiGetObjectDataResponse) throws -> SuiTypeTag{
+        guard let coinTypeArg = SuiCoin.getCoinTypeArg(data: coin),
+              let arg = SuiCoin.getCoinStructTag(coinTypeArg: coinTypeArg) else{
+            throw SuiError.BCSError.SerializeError("Object \(coin.getObjectId() ?? "null") is not a valid coin type")
+        }
+        return .Struct(arg)
+    }
+}
+
 extension SuiJsonRpcProvider{
     
     public func constructTransactionData(tx: SuiUnserializedSignableTransaction, signerAddress: SuiAddress) -> Promise<SuiTransactionData> {
