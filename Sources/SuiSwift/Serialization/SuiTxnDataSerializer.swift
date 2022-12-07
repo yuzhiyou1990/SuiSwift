@@ -14,7 +14,7 @@ public protocol SuiUnserializedSignableTransaction{
     //
     func gasObjectId() -> SuiObjectId?
     //asynchronous
-    func bcsTransaction(provider: SuiJsonRpcProvider?) -> Promise<SuiTransaction>
+    func bcsTransaction() -> Promise<SuiTransaction>
     /**
       * Returns a list of object ids used in the transaction, including the gas payment object
       */
@@ -45,7 +45,7 @@ public struct SuiPublishTransaction: SuiUnserializedSignableTransaction{
         self.gasPayment = gasPayment
         self.gasBudget = gasBudget
     }
-    public func bcsTransaction(provider: SuiJsonRpcProvider? = SuiJsonRpcProvider()) -> Promise<SuiTransaction> {
+    public func bcsTransaction() -> Promise<SuiTransaction> {
         return Promise { seal in
             DispatchQueue.global().async(){
                 switch compiledModules {
@@ -85,7 +85,7 @@ public struct SuiMergeCoinTransaction: SuiUnserializedSignableTransaction{
         self.gasPayment = gasPayment
         self.gasBudget = gasBudget
     }
-    public func bcsTransaction(provider: SuiJsonRpcProvider? = SuiJsonRpcProvider()) -> Promise<SuiTransaction> {
+    public func bcsTransaction() -> Promise<SuiTransaction> {
         return Promise { seal in
             DispatchQueue.global().async(.promise){
                 guard let id = coinToMerge.getObjectId() else{
@@ -134,7 +134,7 @@ public struct SuiSplitCoinTransaction: SuiUnserializedSignableTransaction{
         self.gasPayment = gasPayment
         self.gasBudget = gasBudget
     }
-    public func bcsTransaction(provider: SuiJsonRpcProvider? = SuiJsonRpcProvider()) -> Promise<SuiTransaction> {
+    public func bcsTransaction() -> Promise<SuiTransaction> {
         return Promise { seal in
             DispatchQueue.global().async(.promise){
                 guard let id = coinObject.getObjectId() else{
@@ -196,10 +196,10 @@ public struct SuiMoveCallTransaction: SuiUnserializedSignableTransaction{
         self.gasPayment = gasPayment
         self.gasBudget = gasBudget
     }
-    public func bcsTransaction(provider: SuiJsonRpcProvider? = SuiJsonRpcProvider()) -> Promise<SuiTransaction> {
+    public func bcsTransaction() -> Promise<SuiTransaction> {
         return Promise { seal in
             DispatchQueue.global().async(.promise){
-                guard let packageObjectRef = try? provider?.getObjectRef(objectId: packageObjectId).wait() else{
+                guard let packageObjectRef = try? SuiJsonRpcProvider.shared.getObjectRef(objectId: packageObjectId).wait() else{
                     throw SuiError.BCSError.SerializeError("Serialize SuiMoveCallTransaction GetObjectRef Error, packageObjectId == \(packageObjectId)")
                 }
                 var typeTags = [SuiTypeTag]()
@@ -220,7 +220,7 @@ public struct SuiMoveCallTransaction: SuiUnserializedSignableTransaction{
     }
     //mark
     public func extractObjectIds() throws -> [SuiObjectId] {
-        var objectIds = [SuiObjectId]()
+        var objectIds = try SuiCallArgSerializer().extractObjectIds(txn: self).wait()
         if gasPayment != nil{
             objectIds.append(gasPayment!)
         }
@@ -243,10 +243,10 @@ public struct SuiTransferObjectTransaction: SuiUnserializedSignableTransaction{
         self.gasBudget = gasBudget
         self.recipient = recipient
     }
-    public func bcsTransaction(provider: SuiJsonRpcProvider? = SuiJsonRpcProvider()) -> Promise<SuiTransaction> {
+    public func bcsTransaction() -> Promise<SuiTransaction> {
         return Promise { seal in
             DispatchQueue.global().async(.promise){
-                guard let objectRef = try? provider?.getObjectRef(objectId: objectId).wait() else{
+                guard let objectRef = try? SuiJsonRpcProvider.shared.getObjectRef(objectId: objectId).wait() else{
                     throw SuiError.BCSError.SerializeError("Serialize SuiTransferObjectTransaction Error")
                 }
                 seal.fulfill(.TransferObjectTx(SuiTransferObjectTx(recipient: recipient.value, object_ref: objectRef)))
@@ -279,7 +279,7 @@ public struct SuiTransferSuiTransaction: SuiUnserializedSignableTransaction{
         self.recipient = recipient
         self.amount = amount
     }
-    public func bcsTransaction(provider: SuiJsonRpcProvider? = SuiJsonRpcProvider()) -> Promise<SuiTransaction> {
+    public func bcsTransaction() -> Promise<SuiTransaction> {
         return Promise { seal in
             DispatchQueue.global().async(){
                 seal.fulfill(.TransferSuiTx(SuiTransferSuiTx(recipient: recipient.value, amount: amount)))
@@ -314,10 +314,10 @@ public struct SuiPayTransaction: SuiUnserializedSignableTransaction{
         self.gasPayment = gasPayment
         self.gasBudget = gasBudget
     }
-    public func bcsTransaction(provider: SuiJsonRpcProvider? = SuiJsonRpcProvider()) -> Promise<SuiTransaction> {
+    public func bcsTransaction() -> Promise<SuiTransaction> {
         return Promise { seal in
             DispatchQueue.global().async(){
-                let allPromise = self.inputCoins.compactMap{provider?.getObjectRef(objectId: $0)}
+                let allPromise = self.inputCoins.compactMap{SuiJsonRpcProvider.shared.getObjectRef(objectId: $0)}
                 var inputCoinRefs = [SuiObjectRef]()
                 when(resolved: allPromise).wait().forEach({ result in
                     switch result{
@@ -357,10 +357,10 @@ public struct SuiPaySuiTransaction: SuiUnserializedSignableTransaction{
         self.amounts = amounts
         self.gasBudget = gasBudget
     }
-    public func bcsTransaction(provider: SuiJsonRpcProvider? = SuiJsonRpcProvider()) -> Promise<SuiTransaction> {
+    public func bcsTransaction() -> Promise<SuiTransaction> {
         return Promise { seal in
             DispatchQueue.global().async(){
-                let allPromise = self.inputCoins.compactMap{provider?.getObjectRef(objectId: $0)}
+                let allPromise = self.inputCoins.compactMap{SuiJsonRpcProvider.shared.getObjectRef(objectId: $0)}
                 var inputCoinRefs = [SuiObjectRef?]()
                 when(resolved: allPromise).wait().forEach({ result in
                     switch result{
@@ -391,10 +391,10 @@ public struct SuiPayAllSuiTransaction: SuiUnserializedSignableTransaction{
         self.recipient = recipient
         self.gasBudget = gasBudget
     }
-    public func bcsTransaction(provider: SuiJsonRpcProvider? = SuiJsonRpcProvider()) -> Promise<SuiTransaction> {
+    public func bcsTransaction() -> Promise<SuiTransaction> {
         return Promise { seal in
             DispatchQueue.global().async(){
-                let allPromise = self.inputCoins.compactMap{provider?.getObjectRef(objectId: $0)}
+                let allPromise = self.inputCoins.compactMap{SuiJsonRpcProvider.shared.getObjectRef(objectId: $0)}
                 var inputCoinRefs = [SuiObjectRef?]()
                 when(resolved: allPromise).wait().forEach({ result in
                     switch result{

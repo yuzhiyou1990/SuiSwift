@@ -68,7 +68,6 @@ final class SuiRPCTests: XCTestCase {
         let reqeustExpectation = expectation(description: "test_payTransaction")
         let signAddress = SuiAddress(value: "0xe2317a56ae0bd95ab6237161e4010cfbc67b66ba")
         let keypair = try SuiEd25519Keypair(mnemonics: "rose arch frozen pioneer mango spike ship say result runway daring spin")
-        
         self.client.getCoinBalancesOwnedByAddress(address: signAddress.value).done { responses in
             var objects = [SuiObjectId]()
             for dataResponse in responses{

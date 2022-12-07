@@ -19,7 +19,7 @@ extension SuiJsonRpcProvider{
                     gasPaymentId = try self.selectGasPaymentForTransaction(tx: tx, signerAddress: signerAddress, amount: BigInt(tx.gasBudget)).wait()
                 }
                 let gasPayment =  try self.getObjectRef(objectId: gasPaymentId!).wait()
-                let bcsTransaction = try tx.bcsTransaction(provider: self).wait()
+                let bcsTransaction = try tx.bcsTransaction().wait()
                 seal.fulfill(SuiTransactionData(sender: signerAddress.value, gasBudget: tx.gasBudget, gasPrice: 1, kind: .Single(bcsTransaction), gasPayment: gasPayment!))
                 
             }.catch { error in
