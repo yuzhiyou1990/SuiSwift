@@ -7,12 +7,45 @@
 
 import Foundation
 import PromiseKit
-
+// 参考:
 public class SuiCallArgSerializer{
     static let MOVE_CALL_SER_ERROR = "Move call argument serialization error:"
     var provider: SuiJsonRpcProvider
-    init(provider: SuiJsonRpcProvider = SuiJsonRpcProvider()){
+    init(provider: SuiJsonRpcProvider = SuiJsonRpcProvider.shared){
         self.provider = provider
+    }
+    
+    public func extractObjectIds(txn: SuiMoveCallTransaction) -> Promise<[SuiObjectId]>{
+        return Promise { seal in
+            DispatchQueue.global().async(.promise){
+                let args = try self.serializeMoveCallArguments(txn: txn).wait()
+                var objectArgs = [SuiObjectArg]()
+                args.forEach { callArg in
+                    switch callArg{
+                    case .Object(let arg):
+                        objectArgs.append(arg)
+                    case .ObjVec(let args):
+                        objectArgs.append(contentsOf: args)
+                    case .Pure(_):
+                        break
+                    }
+                }
+                var objectIds = [SuiObjectId]()
+                objectArgs.forEach { arg in
+                    switch arg{
+                    case .ImmOrOwned(let ref):
+                        objectIds.append(ref.objectId.value)
+                    case .Shared(let ref):
+                        objectIds.append(ref.objectId.value)
+                    case .Shared_Deprecated(_):
+                        break
+                    }
+                }
+                seal.fulfill(objectIds)
+            }.catch { error in
+                seal.reject(error)
+            }
+        }
     }
     public func serializeMoveCallArguments(txn: SuiMoveCallTransaction) -> Promise<[SuiCallArg]> {
         return Promise { seal in

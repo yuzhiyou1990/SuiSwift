@@ -9,6 +9,7 @@ import Foundation
 import PromiseKit
 public class SuiJsonRpcProvider{
     public var url: URL
+    public static var shared = SuiJsonRpcProvider()
     private var session: URLSession
     lazy var queue: DispatchQueue = {
         return DispatchQueue(label: "SUI.POST")
