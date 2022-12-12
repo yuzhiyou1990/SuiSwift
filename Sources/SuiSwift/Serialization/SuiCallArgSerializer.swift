@@ -7,7 +7,11 @@
 
 import Foundation
 import PromiseKit
-// 参考:
+
+/**
+ 参考:https://github.com/MystenLabs/sui/blob/7a67d61e2a1b1e23281483e1eff24284e0bcacbe/sdk/typescript/src/signers/txn-data-serializers/call-arg-serializer.ts
+ */
+
 public class SuiCallArgSerializer{
     static let MOVE_CALL_SER_ERROR = "Move call argument serialization error:"
     var provider: SuiJsonRpcProvider
@@ -61,7 +65,6 @@ public class SuiCallArgSerializer{
                         allCallArg.append(arg)
                     case .rejected(let error):
                         debugPrint("newCallArg error: \(error)")
-                        break
                     }
                 }
                 seal.fulfill(allCallArg)
@@ -128,7 +131,6 @@ public class SuiCallArgSerializer{
                             objectArgs.append(arg)
                         case .rejected(let error):
                             debugPrint("newObjectArg error: \(error)")
-                            break
                         }
                     }
                     seal.fulfill(.ObjVec(objectArgs))
@@ -167,7 +169,7 @@ public class SuiCallArgSerializer{
         
         switch normalizedType {
         case .Str(let string):
-            guard allowedTypes.contains(string),let type = SuiTypeTag.parseBase(str: string.lowercased())  else{
+            guard allowedTypes.contains(string), let type = SuiTypeTag.parseBase(str: string.lowercased())  else{
                 throw SuiError.DataSerializerError.ParseError("unknown pure normalized type \(string)")
             }
             return .TypeTag(type, argVal)
@@ -175,13 +177,13 @@ public class SuiCallArgSerializer{
             if case .Str(let string) = suiMoveNormalizedTypeVector.vector, string == "U8"{
                 if argVal == nil{
                     return .String(nil)
-                }else{
+                } else {
                     if case .Str(let str) = argVal! {
                         return .String(str)
                     }
                 }
             }
-            var jsonValue: SuiJsonValue? = nil
+            var jsonValue: SuiJsonValue?
             if argVal != nil {
                 if case .Array(let values) = argVal!{
                     jsonValue = values.first
@@ -196,11 +198,9 @@ public class SuiCallArgSerializer{
             let value = argVal?.value() as? String
             if SuiStructType.RESOLVED_ASCII_STR == suiMoveNormalizedStructType.structType{
                 return .String(value)
-            }
-            else if SuiStructType.RESOLVED_UTF8_STR == suiMoveNormalizedStructType.structType{
+            } else if SuiStructType.RESOLVED_UTF8_STR == suiMoveNormalizedStructType.structType{
                 return .Utf8string(value)
-            }
-            else if SuiStructType.RESOLVED_SUI_ID == suiMoveNormalizedStructType.structType{
+            } else if SuiStructType.RESOLVED_SUI_ID == suiMoveNormalizedStructType.structType{
                 return .Address(value)
             }
         default:

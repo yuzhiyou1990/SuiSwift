@@ -58,7 +58,7 @@ public struct SuiMoveCallTransaction: SuiUnserializedSignableTransaction{
             }
         }
     }
-    //mark
+    // mark
     public func extractObjectIds() throws -> [SuiObjectId] {
         var objectIds = try SuiCallArgSerializer().extractObjectIds(txn: self).wait()
         if gasPayment != nil{
@@ -71,7 +71,7 @@ public struct SuiMoveCallTransaction: SuiUnserializedSignableTransaction{
     }
 }
 
-//mark: move call 需要详细测试一下类型
+ // MARK: move call 需要详细测试一下类型
 extension SuiJsonValue{
     public func value() -> AnyObject{
         switch self{
@@ -85,7 +85,7 @@ extension SuiJsonValue{
             return number as AnyObject
         }
     }
-    public func encode(type: SuiTypeTag,to writer: inout Data) throws{
+    public func encode(type: SuiTypeTag, to writer: inout Data) throws{
         switch type {
         case .Bool:
             guard let booValue = value() as? Bool else{

@@ -29,7 +29,7 @@ public enum SuiObjectOwner: Decodable{
 
 public struct SuiObjectInfo: Decodable{
     public var objectId: SuiAddress
-    public var version: UInt8
+    public var version: UInt64
     public var digest: SuiTransactionDigest
     public var type: String
     public var owner: SuiObjectOwner
@@ -52,7 +52,7 @@ public struct SuiObjectRef: Decodable{
     public var version: UInt64
     public init(digest: String, objectId: String, version: UInt64) {
         self.digest = Base64String(value: digest)
-        self.objectId = SuiAddress(value: objectId)
+        self.objectId = try! SuiAddress(value: objectId)
         self.version = version
     }
 }

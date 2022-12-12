@@ -50,7 +50,7 @@ public struct SuiCoin{
             return nil
         }
         let ranges = type.match(pattern: COIN_TYPE_ARG_REGEX)
-        let found:[String] = ranges.map { String(type[$0]) }
+        let found: [String] = ranges.map { String(type[$0]) }
         guard found.count >= 2 else {
             return nil
         }

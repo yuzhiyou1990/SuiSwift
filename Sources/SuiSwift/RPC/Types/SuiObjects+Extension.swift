@@ -31,12 +31,12 @@ extension Base64String: Decodable{
 }
 extension SuiData{
     enum CodingKeys: String, CodingKey {
-        case dataType = "dataType"
+        case dataType
     }
     public func balance() -> String{
         switch dataObject{
         case .MoveObject(let moveObject): return moveObject.getBalance()
-        case .MovePackage(_),.ParseError(_):  return "0"
+        case .MovePackage(_), .ParseError(_):  return "0"
         }
     }
     public init(from decoder: Decoder) throws {
@@ -81,11 +81,11 @@ extension SuiObject{
 extension SuiObjectOwner{
     
     enum CodingKeys: String, CodingKey {
-        case AddressOwner = "AddressOwner"
-        case ObjectOwner = "ObjectOwner"
-        case SingleOwner = "SingleOwner"
-        case Immutable = "Immutable"
-        case Shared = "Shared"
+        case AddressOwner
+        case ObjectOwner
+        case SingleOwner
+        case Immutable
+        case Shared
         case Unknow
     }
     public init(from decoder: Decoder) throws {
@@ -116,7 +116,6 @@ extension SuiObjectOwner{
         self = .Unknow(SuiError.RPCError.DecodingError("SuiObjectOwner Parse Error"))
     }
 }
-
 
 extension SuiGetObjectDataResponse{
     public enum CodingKeys: CodingKey {
@@ -182,9 +181,7 @@ extension SuiGetObjectDataResponse{
     }
 }
 
-
-
-//move call
+// move call
 
 extension SuiMoveFunctionArgType{
     public init(from decoder: Decoder) throws {

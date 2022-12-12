@@ -79,7 +79,7 @@ extension SuiAddress: BorshDeserializable {
     public init(from reader: inout BinaryReader) throws {
         let bytes = reader.read(count: 20)
         let value = Data(bytes: bytes, count:20).toHexString()
-        self = .init(value: value.addHexPrefix())
+        self = try .init(value: value.addHexPrefix())
     }
 }
 

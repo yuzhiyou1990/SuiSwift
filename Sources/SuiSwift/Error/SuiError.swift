@@ -26,6 +26,7 @@ public class SuiError{
         case InvalidSecretKey
         case InvalidMnemonics
         case InvalidPublicKey
+        case InvalidAddress
         case otherEror(String)
         public var errorDescription: String?{
             switch self {
@@ -41,6 +42,8 @@ public class SuiError{
                 return "Invalid Mnemonics"
             case .InvalidPublicKey:
                 return "Invalid PublicKey"
+            case .InvalidAddress:
+                return "Invalid Address"
             case .otherEror(let string):
                 return string
             }
@@ -48,7 +51,7 @@ public class SuiError{
     }
     public enum RPCError: LocalizedError {
         case EncodingError
-        case DecodingError(_ message: String,_ data: String? = "")
+        case DecodingError(_ message: String, _ data: String? = "")
         case ApiResponseError(method: String, message: String)
         public var errorDescription: String? {
             switch self {
@@ -90,4 +93,3 @@ public class SuiError{
         }
     }
 }
-

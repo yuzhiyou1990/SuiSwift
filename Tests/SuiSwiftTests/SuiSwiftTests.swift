@@ -17,9 +17,9 @@ final class SuiSwiftTests: XCTestCase {
         DispatchQueue.global().async(.promise){
             let paySui = SuiPaySuiTransaction(
                 inputCoins: ["0x870a64c64e69237f7f94970a011eae9f49fe0d61"],
-                recipients: [SuiAddress(value: "0xe2317a56ae0bd95ab6237161e4010cfbc67b66ba")], amounts: [100000], gasBudget: 300)
+                recipients: [try SuiAddress(value: "0xe2317a56ae0bd95ab6237161e4010cfbc67b66ba")], amounts: [100000], gasBudget: 300)
             
-            let transactionData = SuiTransactionData(sender: "0xe2317a56ae0bd95ab6237161e4010cfbc67b66ba",gasBudget: 300, kind: .Single(try paySui.bcsTransaction().wait()), gasPayment: SuiObjectRef(digest: "NqBSnJ2jJCcslFGclvDQndE3Aus1l7MQKAh4btxKez8=", objectId: "0x870a64c64e69237f7f94970a011eae9f49fe0d61", version: 4))
+            let transactionData = SuiTransactionData(sender: "0xe2317a56ae0bd95ab6237161e4010cfbc67b66ba", gasBudget: 300, kind: .Single(try paySui.bcsTransaction().wait()), gasPayment: SuiObjectRef(digest: "NqBSnJ2jJCcslFGclvDQndE3Aus1l7MQKAh4btxKez8=", objectId: "0x870a64c64e69237f7f94970a011eae9f49fe0d61", version: 4))
             var serializeTransactionData = Data()
             try transactionData.serialize(to: &serializeTransactionData)
             XCTAssertTrue(serializeTransactionData.encodeBase64Str()! == "VHJhbnNhY3Rpb25EYXRhOjoABQGHCmTGTmkjf3+UlwoBHq6fSf4NYQQAAAAAAAAAIDagUpydoyQnLJRRnJbw0J3RNwLrNZezECgIeG7cSns/AeIxelauC9latiNxYeQBDPvGe2a6AaCGAQAAAAAA4jF6Vq4L2Vq2I3Fh5AEM+8Z7ZrqHCmTGTmkjf3+UlwoBHq6fSf4NYQQAAAAAAAAAIDagUpydoyQnLJRRnJbw0J3RNwLrNZezECgIeG7cSns/AQAAAAAAAAAsAQAAAAAAAA==")
@@ -43,7 +43,7 @@ final class SuiSwiftTests: XCTestCase {
                             .Str("ipfs://QmZPWWy5Si54R3d26toaqRiqvCH7HkGdXkxwUgCm2oKKM2?filename=img-sq-01.png")],
                 gasBudget: 10000)
             
-            let transactionData = SuiTransactionData(sender: "0xe2317a56ae0bd95ab6237161e4010cfbc67b66ba",gasBudget: moveCall.gasBudget, kind: .Single(try moveCall.bcsTransaction().wait()), gasPayment: SuiObjectRef(digest: "E4Lo1PInBkTV6FRFE5cULqO96k9jrpk3YcU+RNVhsDc=", objectId: "0x4328e8c6f13b658ead58145694f22d81b1876af3", version: 2))
+            let transactionData = SuiTransactionData(sender: "0xe2317a56ae0bd95ab6237161e4010cfbc67b66ba", gasBudget: moveCall.gasBudget, kind: .Single(try moveCall.bcsTransaction().wait()), gasPayment: SuiObjectRef(digest: "E4Lo1PInBkTV6FRFE5cULqO96k9jrpk3YcU+RNVhsDc=", objectId: "0x4328e8c6f13b658ead58145694f22d81b1876af3", version: 2))
             var serializeTransactionData = Data()
             try transactionData.serialize(to: &serializeTransactionData)
             

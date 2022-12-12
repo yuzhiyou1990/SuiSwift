@@ -30,6 +30,9 @@ public struct SuiSecp256k1Keypair: SuiKeypair{
         guard let seed = BIP39.seedFromMmemonics(mnemonics) else {
             throw SuiError.KeypairError.InvalidMnemonics
         }
+        try self.init(seed: seed, path: path)
+    }
+    public init(seed: Data, path: String) throws{
         guard let node = HDNode(seed: seed),
               let treeNode = node.derive(path: path),
               let privateKey = treeNode.privateKey else {

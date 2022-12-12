@@ -12,6 +12,7 @@ public protocol SuiKeypair{
     var publicData: Data { get }
     
     static func randomKeyPair() throws -> SuiKeypair
+    init(seed: Data, path: String) throws
     init(mnemonics: String, derivationPath: SuiDerivationPath) throws
     init(mnemonics: String, path: String) throws
     init(secretKey: Data) throws
@@ -50,7 +51,6 @@ extension SuiDerivationPath: Codable{
     enum CodingKeys: String, CodingKey {
         case DERVIATION_PATH_PURPOSE_ED25519 = "ED25519_PATH"
         case DERVIATION_PATH_PURPOSE_SECP256K1 = "SECP256K1_PATH"
-        case CUSTOM = "CUSTOM_PATH"
     }
     public func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
@@ -73,7 +73,7 @@ extension SuiDerivationPath: Codable{
         }
         if let value = try? container.decode(String.self, forKey: .DERVIATION_PATH_PURPOSE_SECP256K1),
            let addressIndex = value.components(separatedBy: "/").last{
-            self = .DERVIATION_PATH_PURPOSE_ED25519(address_index: addressIndex)
+            self = .DERVIATION_PATH_PURPOSE_SECP256K1(address_index: addressIndex)
             return
         }
         throw SuiPathCodingError.DecodeError

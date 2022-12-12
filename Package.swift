@@ -9,7 +9,7 @@ let package = Package(
         // Products define the executables and libraries a package produces, and make them visible to other packages.
         .library(
             name: "SuiSwift",
-            targets: ["SuiSwift"]),
+            targets: ["SuiSwift"])
     ],
     dependencies: [
         .package(name: "TweetNacl", url: "https://github.com/lishuailibertine/tweetnacl-swiftwrap", from: "1.0.5"),
@@ -17,9 +17,9 @@ let package = Package(
         .package(url: "https://github.com/mathwallet/BIP39swift", from: "1.0.1"),
         .package(url: "https://github.com/mxcl/PromiseKit.git", from: "6.8.4"),
         .package(name: "Secp256k1Swift", url: "https://github.com/mathwallet/Secp256k1Swift.git", from: "1.3.1"),
-        .package(name:"Blake2",url: "https://github.com/tesseract-one/Blake2.swift.git", from: "0.1.2"),
+        .package(name: "Blake2", url: "https://github.com/tesseract-one/Blake2.swift.git", from: "0.1.2"),
         .package(url: "https://github.com/attaswift/BigInt", from: "5.3.0"),
-        .package(url: "https://github.com/Flight-School/AnyCodable.git", .exact("0.6.1")),
+        .package(url: "https://github.com/Flight-School/AnyCodable.git", .exact("0.6.1"))
         // Dependencies declare other packages that this package depends on.
         // .package(url: /* package url */, from: "1.0.0"),
     ],
@@ -31,6 +31,6 @@ let package = Package(
             dependencies: ["CryptoSwift", "TweetNacl", "BIP39swift", "PromiseKit", "Secp256k1Swift", "Blake2", "BigInt", "AnyCodable", .product(name: "BIP32Swift", package: "Secp256k1Swift")]),
         .testTarget(
             name: "SuiSwiftTests",
-            dependencies: ["SuiSwift"]),
+            dependencies: ["SuiSwift"])
     ]
 )

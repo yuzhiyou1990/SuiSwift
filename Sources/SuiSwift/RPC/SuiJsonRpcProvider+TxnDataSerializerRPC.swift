@@ -14,7 +14,7 @@ public protocol SuiUnserializedSignableTransaction{
     var gasBudget: UInt64{get}
     //
     func gasObjectId() -> SuiObjectId?
-    //asynchronous
+    // asynchronous
     func bcsTransaction() -> Promise<SuiTransaction>
     /**
       * Returns a list of object ids used in the transaction, including the gas payment object
@@ -41,6 +41,10 @@ extension SuiJsonRpcProvider{
                 var gasPaymentId: SuiObjectId? = tx.gasObjectId()
                 if gasPaymentId == nil{
                     gasPaymentId = try self.selectGasPaymentForTransaction(tx: tx, signerAddress: signerAddress, amount: BigInt(tx.gasBudget)).wait()
+                }
+                if gasPaymentId == nil{
+                    seal.reject(SuiError.BuildTransactionError.ConstructTransactionDataError("Please select a valid gasPaymentId"))
+                    return
                 }
                 let gasPayment =  try self.getObjectRef(objectId: gasPaymentId!).wait()
                 let bcsTransaction = try tx.bcsTransaction().wait()

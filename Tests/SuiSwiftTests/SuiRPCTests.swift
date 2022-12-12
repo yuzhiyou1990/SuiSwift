@@ -66,14 +66,14 @@ final class SuiRPCTests: XCTestCase {
     
     func test_payTransaction() throws {
         let reqeustExpectation = expectation(description: "test_payTransaction")
-        let signAddress = SuiAddress(value: "0xe2317a56ae0bd95ab6237161e4010cfbc67b66ba")
+        let signAddress = try SuiAddress(value: "0xe2317a56ae0bd95ab6237161e4010cfbc67b66ba")
         let keypair = try SuiEd25519Keypair(mnemonics: "rose arch frozen pioneer mango spike ship say result runway daring spin")
         self.client.getCoinBalancesOwnedByAddress(address: signAddress.value).done { responses in
             var objects = [SuiObjectId]()
             for dataResponse in responses{
                 objects.append(dataResponse.getObjectId()!)
             }
-            let pay = SuiPayTransaction(inputCoins: [objects[0]], recipients: [signAddress], amounts: [123], gasBudget: 300)
+            let pay = SuiPayTransaction(inputCoins: [objects[0],objects[1],objects[2],objects[3]], recipients: [signAddress], amounts: [123], gasBudget: 300)
             DispatchQueue.global(qos: .userInitiated).async { [weak self] in
                 do {
                     let transactionData = try self?.client.constructTransactionData(tx: pay, signerAddress: signAddress).wait()

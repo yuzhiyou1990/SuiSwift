@@ -137,8 +137,7 @@ extension SuiTransferSuiTx: BorshCodable{
         try recipient.serialize(to: &writer)
         if amount == .none {
             try UVarInt(0).serialize(to: &writer)
-        }
-        else {
+        } else {
             try UVarInt(1).serialize(to: &writer)
             try amount.unsafelyUnwrapped.serialize(to: &writer)
         }
@@ -276,7 +275,7 @@ extension SuiTransactionData: BorshCodable{
         try gasBudget.serialize(to: &writer)
     }
     public init(from reader: inout BinaryReader) throws {
-        let _ = reader.read(count: UInt32(typeTag.data(using: .utf8)!.count))
+        _ = reader.read(count: UInt32(typeTag.data(using: .utf8)!.count))
         kind = try .init(from: &reader)
         sender = try .init(from: &reader)
         gasPayment = try .init(from: &reader)
