@@ -20,7 +20,7 @@ public struct SuiSharedObjectRef{
     /** The version the object was shared at */
     public var initialSharedVersion: UInt64
     public init(objectId: String, initialSharedVersion: UInt64) {
-        self.objectId = SuiAddress(value: objectId)
+        self.objectId = try! SuiAddress(value: objectId)
         self.initialSharedVersion = initialSharedVersion
     }
 }
@@ -90,7 +90,7 @@ public struct SuiTransferObjectTx: SuiBSCTransactionObject{
     public var recipient: SuiAddress
     public var object_ref: SuiObjectRef
     public init(recipient: String, object_ref: SuiObjectRef) {
-        self.recipient = SuiAddress(value: recipient)
+        self.recipient = try! SuiAddress(value: recipient)
         self.object_ref = object_ref
     }
 }
@@ -102,7 +102,7 @@ public struct SuiTransferSuiTx: SuiBSCTransactionObject{
     public var recipient: SuiAddress
     public var amount: UInt64?
     public init(recipient: String, amount: UInt64? = nil) {
-        self.recipient = SuiAddress(value: recipient)
+        self.recipient = try! SuiAddress(value: recipient)
         self.amount = amount
     }
 }
@@ -121,7 +121,7 @@ public struct SuiPayTx: SuiBSCTransactionObject{
     public var amounts: [UInt64]
     public init(coins: [SuiObjectRef], recipients: [String], amounts: [UInt64]) {
         self.coins = coins
-        self.recipients = recipients.map{SuiAddress(value: $0)}
+        self.recipients = recipients.map{try! SuiAddress(value: $0)}
         self.amounts = amounts
     }
 }
@@ -146,7 +146,7 @@ public struct SuiPaySuiTx: SuiBSCTransactionObject{
     public var amounts: [UInt64]
     public init(coins: [SuiObjectRef], recipients: [String], amounts: [UInt64]) {
         self.coins = coins
-        self.recipients = recipients.map{SuiAddress(value: $0)}
+        self.recipients = recipients.map{try! SuiAddress(value: $0)}
         self.amounts = amounts
     }
 }
@@ -168,7 +168,7 @@ public struct SuiPayAllSuiTx: SuiBSCTransactionObject{
     public var recipient: SuiAddress
     public init(coins: [SuiObjectRef], recipient: String) {
         self.coins = coins
-        self.recipient = SuiAddress(value: recipient)
+        self.recipient = try! SuiAddress(value: recipient)
     }
 }
 /**
@@ -246,7 +246,7 @@ public struct SuiTransactionData{
     public var gasPayment: SuiObjectRef
     
     public init(sender: String, gasBudget: UInt64 = 10000, gasPrice: UInt64  = 1, kind: SuiTransactionKind, gasPayment: SuiObjectRef) {
-        self.sender = SuiAddress(value: sender)
+        self.sender = try! SuiAddress(value: sender)
         self.gasBudget = gasBudget
         self.gasPrice = gasPrice
         self.kind = kind

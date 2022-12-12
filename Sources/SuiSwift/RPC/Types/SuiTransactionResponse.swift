@@ -130,9 +130,9 @@ extension SuiGenericAuthoritySignature{
 
 extension SuiExecuteTransactionResponse{
     enum CodingKeys: String, CodingKey {
-        case ImmediateReturn = "ImmediateReturn"
-        case EffectsCert = "EffectsCert"
-        case TxCert = "TxCert"
+        case ImmediateReturn
+        case EffectsCert
+        case TxCert
     }
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)

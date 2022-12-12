@@ -85,7 +85,7 @@ extension SuiJsonRpcProvider{
         }
     }
     public func getObjectBatch(objectIds: [String]) -> Promise<[SuiGetObjectDataResponse]>{
-        let params = objectIds.map{(RPCMethod.GetObject,[$0])}
+        let params = objectIds.map{(RPCMethod.GetObject, [$0])}
         return  self.sendBatchRequest(params: params)
     }
     /**

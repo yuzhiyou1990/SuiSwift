@@ -25,6 +25,6 @@ public struct SuiEd25519PublicKey: SuiPublicKey{
         tmp.append(SuiSignatureScheme.ED25519.rawValue)
         publicKey.forEach{tmp.append($0)}
         let address = Data(tmp).sha3(.sha256)[0..<20].toHexString()
-        return SuiAddress(value: address.addHexPrefix())
+        return try SuiAddress(value: address.addHexPrefix())
     }
 }

@@ -23,7 +23,7 @@ public struct SuiPublishTransaction: SuiUnserializedSignableTransaction{
     }
     public func bcsTransaction() -> Promise<SuiTransaction> {
         return Promise { seal in
-            DispatchQueue.global().async(){
+            DispatchQueue.global().async{
                 switch compiledModules {
                 case .Array(_):
                     seal.reject(SuiError.BCSError.SerializeError("Serialize SuiPublishTransaction Error"))

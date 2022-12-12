@@ -18,11 +18,12 @@ public struct SuiEd25519Keypair: SuiKeypair{
         let pubKey = try NaclSign.KeyPair.keyPair(fromSecretKey: secretKey).publicKey
         self.publicData = pubKey
     }
-    public init(seed: Data) throws {
-        guard seed.count == 32 else {
+    public init(seed: Data, path: String) throws {
+        let newSeed = NaclSign.KeyPair.deriveKey(path: path, seed: seed).key
+        guard newSeed.count == 32 else {
             throw SuiError.KeypairError.InvalidSeed
         }
-        let keyPair = try NaclSign.KeyPair.keyPair(fromSeed: seed)
+        let keyPair = try NaclSign.KeyPair.keyPair(fromSeed: newSeed)
         try self.init(secretKey: keyPair.secretKey)
     }
     
@@ -37,8 +38,7 @@ public struct SuiEd25519Keypair: SuiKeypair{
         guard let seed = BIP39.seedFromMmemonics(mnemonics) else {
             throw SuiError.KeypairError.InvalidMnemonics
         }
-        let newSeed = NaclSign.KeyPair.deriveKey(path: path, seed: seed).key
-        try self.init(seed: newSeed.subdata(in: 0..<32))
+        try self.init(seed: seed, path: path)
     }
     
     public func getPublicKey() throws -> any SuiPublicKey {

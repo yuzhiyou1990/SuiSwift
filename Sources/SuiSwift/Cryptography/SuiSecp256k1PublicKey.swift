@@ -27,6 +27,6 @@ public struct SuiSecp256k1PublicKey: SuiPublicKey{
         tmp.append(SuiSignatureScheme.Secp256k1.rawValue)
         publicKey.forEach{tmp.append($0)}
         let address = Data(tmp).sha3(.sha256)[0..<20].toHexString()
-        return SuiAddress(value: address.addHexPrefix())
+        return try SuiAddress(value: address.addHexPrefix())
     }
 }

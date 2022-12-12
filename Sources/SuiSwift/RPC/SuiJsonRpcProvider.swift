@@ -26,7 +26,7 @@ public class SuiJsonRpcProvider{
             self.id = UUID().uuidString
         }
     }
-    public struct ResponseParam<Result:Decodable>: Decodable{
+    public struct ResponseParam<Result: Decodable>: Decodable{
         public var jsonrpc: String
         public var result: Result
         public var id: String
@@ -56,7 +56,7 @@ public class SuiJsonRpcProvider{
         }
     }
     
-    public func sendBatchRequest<T: Encodable, Result: Decodable>(params: [(method: RPCMethod,param:T)]) -> Promise<[Result]>{
+    public func sendBatchRequest<T: Encodable, Result: Decodable>(params: [(method: RPCMethod, param: T)]) -> Promise<[Result]>{
         return Promise { seal in
             let params = params.map{RequestParam(method: $0.method, params: $0.param)}
             guard let body = try? JSONEncoder().encode(params) else{
@@ -80,13 +80,13 @@ public class SuiJsonRpcProvider{
     
     private func request(body: Data) -> Promise<Data>{
         let rp = Promise<Data>.pending()
-        var task: URLSessionTask? = nil
+        var task: URLSessionTask?
         self.queue.async {
             var urlRequest = URLRequest(url: self.url, cachePolicy: URLRequest.CachePolicy.reloadIgnoringCacheData)
             urlRequest.httpMethod = "POST"
             urlRequest.setValue("application/json", forHTTPHeaderField: "Content-Type")
             urlRequest.httpBody = body
-            task = self.session.dataTask(with: urlRequest){ (data, response, error) in
+            task = self.session.dataTask(with: urlRequest){ (data, _, error) in
                 guard error == nil else {
                     rp.resolver.reject(error!)
                     return

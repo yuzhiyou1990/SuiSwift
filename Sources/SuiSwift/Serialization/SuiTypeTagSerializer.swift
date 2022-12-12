@@ -124,29 +124,21 @@ extension SuiTypeTag{
     public static func parseBase(str: String) -> SuiTypeTag?{
         if str == "address" {
             return .Address
-        }
-        else if str == "bool" {
+        } else if str == "bool" {
             return .Bool
-        }
-        else if str == "u8" {
+        } else if str == "u8" {
             return .UInt8
-        }
-        else if str == "u16" {
+        } else if str == "u16" {
             return .UInt16
-        }
-        else if str == "u32" {
+        } else if str == "u32" {
             return .UInt32
-        }
-        else if str == "u64" {
+        } else if str == "u64" {
             return .UInt64
-        }
-        else if str == "u128" {
+        } else if str == "u128" {
             return .UInt128
-        }
-        else if str == "u256" {
+        } else if str == "u256" {
             return .UInt256
-        }
-        else if str == "signer" {
+        } else if str == "signer" {
             return .Signer
         }
         return nil
@@ -184,4 +176,3 @@ extension SuiTypeTag{
         return try typeTags.map{try parseFromStr(str: $0)}
     }
 }
-
