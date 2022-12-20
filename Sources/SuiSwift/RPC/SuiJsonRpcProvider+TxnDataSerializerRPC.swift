@@ -35,7 +35,7 @@ extension SuiUnserializedSignableTransaction{
 
 extension SuiJsonRpcProvider{
     
-    public func constructTransactionData(tx: SuiUnserializedSignableTransaction, signerAddress: SuiAddress) -> Promise<SuiTransactionData> {
+    public func constructTransactionData(tx: SuiUnserializedSignableTransaction, signerAddress: SuiAddress, gasPrice: UInt64? = 1) -> Promise<SuiTransactionData> {
         return Promise { seal in
             DispatchQueue.global().async(.promise){
                 var gasPaymentId: SuiObjectId? = tx.gasObjectId()
@@ -48,7 +48,7 @@ extension SuiJsonRpcProvider{
                 }
                 let gasPayment =  try self.getObjectRef(objectId: gasPaymentId!).wait()
                 let bcsTransaction = try tx.bcsTransaction().wait()
-                seal.fulfill(SuiTransactionData(sender: signerAddress.value, gasBudget: tx.gasBudget, gasPrice: 1, kind: .Single(bcsTransaction), gasPayment: gasPayment!))
+                seal.fulfill(SuiTransactionData(sender: signerAddress.value, gasBudget: tx.gasBudget, gasPrice: gasPrice!, kind: .Single(bcsTransaction), gasPayment: gasPayment!))
                 
             }.catch { error in
                 seal.reject(error)

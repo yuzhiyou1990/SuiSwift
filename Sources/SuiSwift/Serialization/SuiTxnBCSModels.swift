@@ -232,10 +232,6 @@ public enum SuiTransactionKind{
  */
 
 public struct SuiTransactionData{
-    /**
-       * Serialize `TransactionData` into BCS encoded bytes
-    */
-    public let typeTag: String = "TransactionData::"
     public var sender: SuiAddress
     public var gasBudget: UInt64
     // Need to keep in sync with

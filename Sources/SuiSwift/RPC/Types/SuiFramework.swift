@@ -149,7 +149,7 @@ extension SuiMoveObject: SuiObjectDataFull{
     }
     public func getBalance() -> String{
         guard let dic = fields.value as? [String: Any],
-              let balanceI = dic["balance"] as? Int else{
+              let balanceI = dic["balance"] as? String else{
             return "0"
         }
         return "\(balanceI)"

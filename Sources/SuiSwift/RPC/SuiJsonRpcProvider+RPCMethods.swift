@@ -14,7 +14,10 @@ extension SuiJsonRpcProvider{
         case GetObjectsOwnedByAddress = "sui_getObjectsOwnedByAddress"
         case GetObject = "sui_getObject"
         case RpcApiVersion = "rpc.discover"
+        //version?.minor < 18
         case ExecuteTransaction = "sui_executeTransaction"
+        //0.19.0
+        case ExecuteTransactionSerializedSig = "sui_executeTransactionSerializedSig"
         case DryRunTransaction = "sui_dryRunTransaction"
         case GetMoveFunctionArgTypes = "sui_getMoveFunctionArgTypes"
         case GetNormalizedMoveModulesByPackage = "sui_getNormalizedMoveModulesByPackage"
@@ -87,6 +90,18 @@ extension SuiJsonRpcProvider{
     public func getObjectBatch(objectIds: [String]) -> Promise<[SuiGetObjectDataResponse]>{
         let params = objectIds.map{(RPCMethod.GetObject, [$0])}
         return  self.sendBatchRequest(params: params)
+    }
+    
+    public func executeExecuteTransactionSerializedSigWithRequestType(signedTransaction: SuiSignedTransaction, requestType: SuiExecuteTransactionRequestType = .WaitForTxCert) -> Promise<SuiExecuteTransactionResponse>{
+        var serialized_sig = [UInt8]()
+        serialized_sig.append(signedTransaction.signatureScheme.rawValue)
+        serialized_sig.append(contentsOf: Array(base64: signedTransaction.signature))
+        serialized_sig.append(contentsOf: Array(base64: signedTransaction.pubkey))
+        return self.sendRequest(method: .ExecuteTransactionSerializedSig, params: [signedTransaction.txnBytes, serialized_sig.toBase64(), requestType.rawValue])
+    }
+    
+    public func executeTransactionWithRequestType(signedTransaction: SuiSignedTransaction, requestType: SuiExecuteTransactionRequestType = .WaitForTxCert) -> Promise<SuiExecuteTransactionResponse> {
+        return executeTransactionWithRequestType(txnBytes: signedTransaction.txnBytes, signatureScheme: signedTransaction.signatureScheme, signature: signedTransaction.signature, pubkey: signedTransaction.pubkey, requestType: requestType)
     }
     /**
        * This is under development endpoint on Fullnode that will eventually
