@@ -267,7 +267,6 @@ extension SuiTransactionKind: BorshCodable{
 
 extension SuiTransactionData: BorshCodable{
     public func serialize(to writer: inout Data) throws {
-        writer.append(typeTag.data(using: .utf8)!)
         try kind.serialize(to: &writer)
         try sender.serialize(to: &writer)
         try gasPayment.serialize(to: &writer)
@@ -275,7 +274,6 @@ extension SuiTransactionData: BorshCodable{
         try gasBudget.serialize(to: &writer)
     }
     public init(from reader: inout BinaryReader) throws {
-        _ = reader.read(count: UInt32(typeTag.data(using: .utf8)!.count))
         kind = try .init(from: &reader)
         sender = try .init(from: &reader)
         gasPayment = try .init(from: &reader)

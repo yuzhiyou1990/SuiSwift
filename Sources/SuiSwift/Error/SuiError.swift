@@ -75,11 +75,17 @@ public class SuiError{
         }
     }
     public enum BuildTransactionError: LocalizedError{
+        case InvalidSignData
+        case InvalidSerializeData
         case ConstructTransactionDataError(_ message: String? = nil)
         public var errorDescription: String? {
             switch self {
             case .ConstructTransactionDataError(let message):
                 return "BuildTransactionError Message: \(message ?? "")"
+            case .InvalidSignData:
+                return "Invalid SignData"
+            case .InvalidSerializeData:
+                return "Invalid SerializeData"
             }
         }
     }

@@ -73,21 +73,15 @@ final class SuiRPCTests: XCTestCase {
             for dataResponse in responses{
                 objects.append(dataResponse.getObjectId()!)
             }
-            let pay = SuiPayTransaction(inputCoins: [objects[0],objects[1],objects[2],objects[3]], recipients: [signAddress], amounts: [123], gasBudget: 300)
+            let pay = SuiPayTransaction(inputCoins: [objects[0], objects[1], objects[2], objects[3]], recipients: [signAddress], amounts: [123], gasBudget: 300)
             DispatchQueue.global(qos: .userInitiated).async { [weak self] in
                 do {
                     let transactionData = try self?.client.constructTransactionData(tx: pay, signerAddress: signAddress).wait()
-                    var serializeTransactionData = Data()
-                    try transactionData?.serialize(to: &serializeTransactionData)
-                    
-                    let signData = try keypair.signData(message: serializeTransactionData)
-                    let publicKey = try keypair.getPublicKey().toBase64()
-                    
-                    self?.client.executeTransactionWithRequestType(txnBytes: serializeTransactionData.encodeBase64Str()!, signatureScheme: .ED25519, signature: signData.encodeBase64Str()!, pubkey: publicKey).done { response in
-                        
+                    let signedTransaction =  try transactionData?.signWithKeypair(keypair: keypair)
+                    self?.client.executeTransactionWithRequestType(signedTransaction: signedTransaction!).done({ response in
                         debugPrint("response: \(response)")
                         reqeustExpectation.fulfill()
-                    }.catch { error in
+                    }).catch { error in
                         debugPrint("error: \(error)")
                         reqeustExpectation.fulfill()
                     }
