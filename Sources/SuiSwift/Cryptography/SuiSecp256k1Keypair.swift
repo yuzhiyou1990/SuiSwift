@@ -23,15 +23,18 @@ public struct SuiSecp256k1Keypair: SuiKeypair{
         }
         self.publicData = pubKey
     }
+    
     public init(mnemonics: String, derivationPath: SuiDerivationPath = .DERVIATION_PATH_PURPOSE_SECP256K1(address_index: "0")) throws{
         try self.init(mnemonics: mnemonics, path: derivationPath.PATH())
     }
+    
     public init(mnemonics: String, path: String) throws{
         guard let seed = BIP39.seedFromMmemonics(mnemonics) else {
             throw SuiError.KeypairError.InvalidMnemonics
         }
         try self.init(seed: seed, path: path)
     }
+    
     public init(seed: Data, path: String) throws{
         guard let node = HDNode(seed: seed),
               let treeNode = node.derive(path: path),

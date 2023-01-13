@@ -14,6 +14,7 @@ extension SuiJsonRpcProvider{
         case GetObjectsOwnedByAddress = "sui_getObjectsOwnedByAddress"
         case GetObject = "sui_getObject"
         case RpcApiVersion = "rpc.discover"
+        case GetSuiSystemState = "sui_getSuiSystemState"
         //version?.minor < 18
         case ExecuteTransaction = "sui_executeTransaction"
         //0.19.0
@@ -24,6 +25,10 @@ extension SuiJsonRpcProvider{
         case GetNormalizedMoveModule = "sui_getNormalizedMoveModule"
         case GetNormalizedMoveFunction = "sui_getNormalizedMoveFunction"
         case GetNormalizedMoveStruct = "sui_getNormalizedMoveStruct"
+    }
+    
+    public func getSuiSystemState() -> Promise<SuiSystemState> {
+        return  self.sendRequest(method: .GetSuiSystemState, params: try! JSONSerialization.data(withJSONObject: [], options: []))
     }
     /**
        * Returns the estimated gas cost for the transaction
@@ -92,7 +97,7 @@ extension SuiJsonRpcProvider{
         return  self.sendBatchRequest(params: params)
     }
     
-    public func executeExecuteTransactionSerializedSigWithRequestType(signedTransaction: SuiSignedTransaction, requestType: SuiExecuteTransactionRequestType = .WaitForTxCert) -> Promise<SuiExecuteTransactionResponse>{
+    public func executeExecuteTransactionSerializedSigWithRequestType(signedTransaction: SuiSignedTransaction, requestType: SuiExecuteTransactionRequestType = .WaitForLocalExecution) -> Promise<SuiExecuteTransactionResponse>{
         var serialized_sig = [UInt8]()
         serialized_sig.append(signedTransaction.signatureScheme.rawValue)
         serialized_sig.append(contentsOf: Array(base64: signedTransaction.signature))

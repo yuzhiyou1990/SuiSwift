@@ -78,7 +78,7 @@ final class SuiRPCTests: XCTestCase {
                 do {
                     let transactionData = try self?.client.constructTransactionData(tx: pay, signerAddress: signAddress).wait()
                     let signedTransaction =  try transactionData?.signWithKeypair(keypair: keypair)
-                    self?.client.executeTransactionWithRequestType(signedTransaction: signedTransaction!).done({ response in
+                    self?.client.executeExecuteTransactionSerializedSigWithRequestType(signedTransaction: signedTransaction!).done({ response in
                         debugPrint("response: \(response)")
                         reqeustExpectation.fulfill()
                     }).catch { error in

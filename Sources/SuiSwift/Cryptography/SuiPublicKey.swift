@@ -10,12 +10,15 @@ import Foundation
 public enum SuiSignatureScheme: UInt8, Codable{
     case ED25519 = 0x00
     case Secp256k1 = 0x01
+    case BLS = 0x02
     public func name() -> String{
         switch self {
         case .ED25519:
             return "ED25519"
         case .Secp256k1:
             return "Secp256k1"
+        case .BLS:
+            return "BLS12381"
         }
     }
 }

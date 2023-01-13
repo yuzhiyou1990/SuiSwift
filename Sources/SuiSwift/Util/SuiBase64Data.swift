@@ -23,6 +23,6 @@ extension Data: SuiBase64Data{
         guard let data = encodeBase64() else{
             return nil
         }
-        return  String(data:data, encoding: .utf8)
+        return  String(data: data, encoding: .utf8)
     }
 }

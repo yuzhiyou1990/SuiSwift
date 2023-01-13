@@ -15,14 +15,13 @@ final class SuiSwiftTests: XCTestCase {
     func test_transfer_sui_bcs() throws {
         let reqeustExpectation = expectation(description: "test_transfer_sui_bcs")
         DispatchQueue.global().async(.promise){
-            let paySui = SuiPaySuiTransaction(
-                inputCoins: ["0x870a64c64e69237f7f94970a011eae9f49fe0d61"],
-                recipients: [try SuiAddress(value: "0xe2317a56ae0bd95ab6237161e4010cfbc67b66ba")], amounts: [100000], gasBudget: 300)
-            
-            let transactionData = SuiTransactionData(sender: "0xe2317a56ae0bd95ab6237161e4010cfbc67b66ba", gasBudget: 300, kind: .Single(try paySui.bcsTransaction().wait()), gasPayment: SuiObjectRef(digest: "NqBSnJ2jJCcslFGclvDQndE3Aus1l7MQKAh4btxKez8=", objectId: "0x870a64c64e69237f7f94970a011eae9f49fe0d61", version: 4))
+            let paySui = SuiPaySuiTx(coins: [SuiObjectRef(digest: "NSzg4ZTMjIMiiE3LV1ng5Jt+8C6DUbu5kI7E6Ivlu/c=", objectId: "0x72fc9393132bee637962075b6428e332f5e3bc4c", version: 8297),
+                                             SuiObjectRef(digest: "4OsyaC46IaEKpFdVduoo10EjaN1EdURincWnAkJqMaU=", objectId: "0x9570c23a8576fe98887445f9a6e2339ed7058b33", version: 8296)], recipients: [
+            "0xe2317a56ae0bd95ab6237161e4010cfbc67b66ba"], amounts: [10000000])
+            let transactionData = SuiTransactionData(sender: "0xe2317a56ae0bd95ab6237161e4010cfbc67b66ba", gasBudget: 300, kind: .Single(.PaySuiTx(paySui)), gasPayment: SuiObjectRef(digest: "NSzg4ZTMjIMiiE3LV1ng5Jt+8C6DUbu5kI7E6Ivlu/c=", objectId: "0x72fc9393132bee637962075b6428e332f5e3bc4c", version: 8297))
             var serializeTransactionData = Data()
             try transactionData.serialize(to: &serializeTransactionData)
-            XCTAssertTrue(serializeTransactionData.encodeBase64Str()! == "VHJhbnNhY3Rpb25EYXRhOjoABQGHCmTGTmkjf3+UlwoBHq6fSf4NYQQAAAAAAAAAIDagUpydoyQnLJRRnJbw0J3RNwLrNZezECgIeG7cSns/AeIxelauC9latiNxYeQBDPvGe2a6AaCGAQAAAAAA4jF6Vq4L2Vq2I3Fh5AEM+8Z7ZrqHCmTGTmkjf3+UlwoBHq6fSf4NYQQAAAAAAAAAIDagUpydoyQnLJRRnJbw0J3RNwLrNZezECgIeG7cSns/AQAAAAAAAAAsAQAAAAAAAA==")
+            XCTAssertTrue(serializeTransactionData.encodeBase64Str()! == "AAUCcvyTkxMr7mN5YgdbZCjjMvXjvExpIAAAAAAAACA1LODhlMyMgyKITctXWeDkm37wLoNRu7mQjsToi+W795VwwjqFdv6YiHRF+abiM57XBYszaCAAAAAAAAAg4OsyaC46IaEKpFdVduoo10EjaN1EdURincWnAkJqMaUB4jF6Vq4L2Vq2I3Fh5AEM+8Z7ZroBgJaYAAAAAADiMXpWrgvZWrYjcWHkAQz7xntmunL8k5MTK+5jeWIHW2Qo4zL147xMaSAAAAAAAAAgNSzg4ZTMjIMiiE3LV1ng5Jt+8C6DUbu5kI7E6Ivlu/cBAAAAAAAAACwBAAAAAAAA")
             reqeustExpectation.fulfill()
         }.catch { error in
             debugPrint(error)
