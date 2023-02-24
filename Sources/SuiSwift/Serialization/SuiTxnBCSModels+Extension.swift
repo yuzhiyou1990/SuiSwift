@@ -264,20 +264,49 @@ extension SuiTransactionKind: BorshCodable{
         }
     }
 }
-
+// 0.27 add
+extension SuiGasData: BorshCodable{
+    public func serialize(to writer: inout Data) throws {
+        try payment.serialize(to: &writer)
+        try owner.serialize(to: &writer)
+        try price.serialize(to: &writer)
+        try budget.serialize(to: &writer)
+    }
+    public init(from reader: inout BinaryReader) throws {
+        payment = try .init(from: &reader)
+        owner = try .init(from: &reader)
+        price = try .init(from: &reader)
+        budget = try .init(from: &reader)
+    }
+}
+extension SuiTransactionExpiration: BorshCodable{
+    public func serialize(to writer: inout Data) throws {
+        switch self {
+        case .None:
+            break
+        case .Epoch(let uInt64):
+            try uInt64.serialize(to: &writer)
+        }
+    }
+    public init(from reader: inout BinaryReader) throws {
+        if reader.remainingBytes().count == 0{
+            self = .None
+        } else {
+            self = .Epoch(try UInt64(from: &reader))
+        }
+    }
+}
 extension SuiTransactionData: BorshCodable{
     public func serialize(to writer: inout Data) throws {
         try kind.serialize(to: &writer)
         try sender.serialize(to: &writer)
-        try gasPayment.serialize(to: &writer)
-        try gasPrice.serialize(to: &writer)
-        try gasBudget.serialize(to: &writer)
+        try gasData.serialize(to: &writer)
+        try expiration.serialize(to: &writer)
     }
     public init(from reader: inout BinaryReader) throws {
         kind = try .init(from: &reader)
         sender = try .init(from: &reader)
-        gasPayment = try .init(from: &reader)
-        gasPrice = try .init(from: &reader)
-        gasBudget = try .init(from: &reader)
+        gasData = try .init(from: &reader)
+        expiration = try .init(from: &reader)
     }
 }

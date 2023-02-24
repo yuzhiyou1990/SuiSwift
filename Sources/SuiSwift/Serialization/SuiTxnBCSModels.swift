@@ -65,13 +65,24 @@ public enum SuiCallArg{
  * Should be crafted carefully, because the order of type parameters and
  * arguments matters.
  */
+/**
+    MoveCallTx: {
+      package: BCS.ADDRESS,
+      module: BCS.STRING,
+      function: BCS.STRING,
+      typeArguments: 'vector<TypeTag>',
+      arguments: 'vector<CallArg>',
+    }
+ */
+
 public struct SuiMoveCallTx: SuiBSCTransactionObject{
-    public var package: SuiObjectRef
+    // 0.27
+    public var package: SuiAddress
     public var module: String
     public var function: String
     public var typeArguments: [SuiTypeTag]
     public var arguments: [SuiCallArg]
-    public init(package: SuiObjectRef, module: String, function: String, typeArguments: [SuiTypeTag], arguments: [SuiCallArg]) {
+    public init(package: SuiAddress, module: String, function: String, typeArguments: [SuiTypeTag], arguments: [SuiCallArg]) {
         self.package = package
         self.module = module
         self.function = function
@@ -224,6 +235,32 @@ public enum SuiTransactionKind{
     case Batch([SuiTransaction])
     // .. more transaction types go here
 }
+
+/**
+ * The GasData to be used in the transaction.     (0.27 add)
+ */
+public struct SuiGasData{
+    var payment: SuiObjectRef
+    var owner: SuiAddress
+    // https://github.com/MystenLabs/sui/blob/f32877f2e40d35a008710c232e49b57aab886462/crates/sui-types/src/messages.rs#L338
+    var price: UInt64
+    var budget: UInt64
+    init(payment: SuiObjectRef, owner: SuiAddress, price: UInt64 = 1, budget: UInt64 = 10000) {
+        self.payment = payment
+        self.owner = owner
+        self.price = price
+        self.budget = budget
+    }
+}
+/**
+ * TransactionExpiration
+ *
+ * Indications the expiration time for a transaction.
+ */
+public enum SuiTransactionExpiration{
+    case None
+    case Epoch(UInt64)
+}
 /**
  * The TransactionData to be signed and sent to the RPC service.
  *
@@ -232,20 +269,15 @@ public enum SuiTransactionKind{
  */
 
 public struct SuiTransactionData{
-    public var sender: SuiAddress
-    public var gasBudget: UInt64
-    // Need to keep in sync with
-    // https://github.com/MystenLabs/sui/blob/f32877f2e40d35a008710c232e49b57aab886462/crates/sui-types/src/messages.rs#L338
-    public var gasPrice: UInt64
     // TODO: support batch txns
     public var kind: SuiTransactionKind
-    public var gasPayment: SuiObjectRef
-    
-    public init(sender: String, gasBudget: UInt64 = 10000, gasPrice: UInt64  = 1, kind: SuiTransactionKind, gasPayment: SuiObjectRef) {
-        self.sender = try! SuiAddress(value: sender)
-        self.gasBudget = gasBudget
-        self.gasPrice = gasPrice
+    public var sender: SuiAddress
+    public var gasData: SuiGasData
+    public var expiration: SuiTransactionExpiration
+    init(kind: SuiTransactionKind, sender: SuiAddress, gasData: SuiGasData, expiration: SuiTransactionExpiration = .None) {
         self.kind = kind
-        self.gasPayment = gasPayment
+        self.sender = sender
+        self.gasData = gasData
+        self.expiration = expiration
     }
 }

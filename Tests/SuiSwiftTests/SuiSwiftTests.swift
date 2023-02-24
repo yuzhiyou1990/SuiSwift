@@ -15,13 +15,14 @@ final class SuiSwiftTests: XCTestCase {
     func test_transfer_sui_bcs() throws {
         let reqeustExpectation = expectation(description: "test_transfer_sui_bcs")
         DispatchQueue.global().async(.promise){
-            let paySui = SuiPaySuiTx(coins: [SuiObjectRef(digest: "NSzg4ZTMjIMiiE3LV1ng5Jt+8C6DUbu5kI7E6Ivlu/c=", objectId: "0x72fc9393132bee637962075b6428e332f5e3bc4c", version: 8297),
-                                             SuiObjectRef(digest: "4OsyaC46IaEKpFdVduoo10EjaN1EdURincWnAkJqMaU=", objectId: "0x9570c23a8576fe98887445f9a6e2339ed7058b33", version: 8296)], recipients: [
-            "0xe2317a56ae0bd95ab6237161e4010cfbc67b66ba"], amounts: [10000000])
-            let transactionData = SuiTransactionData(sender: "0xe2317a56ae0bd95ab6237161e4010cfbc67b66ba", gasBudget: 300, kind: .Single(.PaySuiTx(paySui)), gasPayment: SuiObjectRef(digest: "NSzg4ZTMjIMiiE3LV1ng5Jt+8C6DUbu5kI7E6Ivlu/c=", objectId: "0x72fc9393132bee637962075b6428e332f5e3bc4c", version: 8297))
+            let paySui = SuiPaySuiTransaction(
+                inputCoins: ["0x870a64c64e69237f7f94970a011eae9f49fe0d61"],
+                recipients: [try SuiAddress(value: "0xe2317a56ae0bd95ab6237161e4010cfbc67b66ba")], amounts: [100000], gasBudget: 300)
+            let gasData = SuiGasData(payment: SuiObjectRef(digest: "NqBSnJ2jJCcslFGclvDQndE3Aus1l7MQKAh4btxKez8=", objectId: "0x870a64c64e69237f7f94970a011eae9f49fe0d61", version: 4), owner: try SuiAddress(value: "0xe2317a56ae0bd95ab6237161e4010cfbc67b66ba"))
+            let transactionData = SuiTransactionData(kind: .Single(try paySui.bcsTransaction(provider: SuiJsonRpcProvider.shared).wait()), sender: try SuiAddress(value: "0xe2317a56ae0bd95ab6237161e4010cfbc67b66ba"), gasData: gasData)
             var serializeTransactionData = Data()
             try transactionData.serialize(to: &serializeTransactionData)
-            XCTAssertTrue(serializeTransactionData.encodeBase64Str()! == "AAUCcvyTkxMr7mN5YgdbZCjjMvXjvExpIAAAAAAAACA1LODhlMyMgyKITctXWeDkm37wLoNRu7mQjsToi+W795VwwjqFdv6YiHRF+abiM57XBYszaCAAAAAAAAAg4OsyaC46IaEKpFdVduoo10EjaN1EdURincWnAkJqMaUB4jF6Vq4L2Vq2I3Fh5AEM+8Z7ZroBgJaYAAAAAADiMXpWrgvZWrYjcWHkAQz7xntmunL8k5MTK+5jeWIHW2Qo4zL147xMaSAAAAAAAAAgNSzg4ZTMjIMiiE3LV1ng5Jt+8C6DUbu5kI7E6Ivlu/cBAAAAAAAAACwBAAAAAAAA")
+            XCTAssertTrue(serializeTransactionData.encodeBase64Str()! == "VHJhbnNhY3Rpb25EYXRhOjoABQGHCmTGTmkjf3+UlwoBHq6fSf4NYQQAAAAAAAAAIDagUpydoyQnLJRRnJbw0J3RNwLrNZezECgIeG7cSns/AeIxelauC9latiNxYeQBDPvGe2a6AaCGAQAAAAAA4jF6Vq4L2Vq2I3Fh5AEM+8Z7ZrqHCmTGTmkjf3+UlwoBHq6fSf4NYQQAAAAAAAAAIDagUpydoyQnLJRRnJbw0J3RNwLrNZezECgIeG7cSns/AQAAAAAAAAAsAQAAAAAAAA==")
             reqeustExpectation.fulfill()
         }.catch { error in
             debugPrint(error)
@@ -29,6 +30,7 @@ final class SuiSwiftTests: XCTestCase {
         }
         wait(for: [reqeustExpectation], timeout: 30)
     }
+    
     func test_moveCall_nft_bcs() throws{
         let reqeustExpectation = expectation(description: "test_getNormalizedMoveStruct")
         DispatchQueue.global().async(.promise){
@@ -37,12 +39,14 @@ final class SuiSwiftTests: XCTestCase {
                 module: "devnet_nft",
                 function: "mint",
                 typeArguments: .Strings([]),
-                arguments: [.Str("Example NFT"),
-                            .Str("An NFT created by Sui Wallet"),
-                            .Str("ipfs://QmZPWWy5Si54R3d26toaqRiqvCH7HkGdXkxwUgCm2oKKM2?filename=img-sq-01.png")],
+                arguments: [MoveCallArgument.JsonValue(.Str("Example NFT")),
+                            MoveCallArgument.JsonValue(.Str("An NFT created by Sui Wallet")),
+                            MoveCallArgument.JsonValue(.Str("ipfs://QmZPWWy5Si54R3d26toaqRiqvCH7HkGdXkxwUgCm2oKKM2?filename=img-sq-01.png"))],
                 gasBudget: 10000)
             
-            let transactionData = SuiTransactionData(sender: "0xe2317a56ae0bd95ab6237161e4010cfbc67b66ba", gasBudget: moveCall.gasBudget, kind: .Single(try moveCall.bcsTransaction().wait()), gasPayment: SuiObjectRef(digest: "E4Lo1PInBkTV6FRFE5cULqO96k9jrpk3YcU+RNVhsDc=", objectId: "0x4328e8c6f13b658ead58145694f22d81b1876af3", version: 2))
+            let gasData = SuiGasData(payment:SuiObjectRef(digest: "E4Lo1PInBkTV6FRFE5cULqO96k9jrpk3YcU+RNVhsDc=", objectId: "0x4328e8c6f13b658ead58145694f22d81b1876af3", version: 2), owner: try SuiAddress(value: "0xe2317a56ae0bd95ab6237161e4010cfbc67b66ba"))
+            let transactionData = SuiTransactionData(kind: .Single(try moveCall.bcsTransaction(provider: SuiJsonRpcProvider.shared).wait()), sender: try SuiAddress(value: "0xe2317a56ae0bd95ab6237161e4010cfbc67b66ba"), gasData: gasData)
+            
             var serializeTransactionData = Data()
             try transactionData.serialize(to: &serializeTransactionData)
             
@@ -57,7 +61,8 @@ final class SuiSwiftTests: XCTestCase {
     }
     
     func test_decode_moveCall_nft_bcs() throws{
-        let mintNftData = Array(base64: "VHJhbnNhY3Rpb25EYXRhOjoAAgAAAAAAAAAAAAAAAAAAAAAAAAACAQAAAAAAAAAgrUd+yyNncmiOE+31Fz+w5YwHA+1hpiSfUqRnZJKhLN4KZGV2bmV0X25mdARtaW50AAMADAtFeGFtcGxlIE5GVAAdHEFuIE5GVCBjcmVhdGVkIGJ5IFN1aSBXYWxsZXQATUxpcGZzOi8vUW1aUFdXeTVTaTU0UjNkMjZ0b2FxUmlxdkNIN0hrR2RYa3h3VWdDbTJvS0tNMj9maWxlbmFtZT1pbWctc3EtMDEucG5n4jF6Vq4L2Vq2I3Fh5AEM+8Z7ZrpDKOjG8Ttljq1YFFaU8i2BsYdq8wIAAAAAAAAAIBOC6NTyJwZE1ehURROXFC6jvepPY66ZN2HFPkTVYbA3AQAAAAAAAAAQJwAAAAAAAA==")
+        let mintNftData = Array(base64: "AAIAAAAAAAAAAAAAAAAAAAAAAAAAAgpkZXZuZXRfbmZ0BG1pbnQAAwAMC0V4YW1wbGUgTkZUAB0cQW4gTkZUIGNyZWF0ZWQgYnkgU3VpIFdhbGxldABNTGlwZnM6Ly9RbVpQV1d5NVNpNTRSM2QyNnRvYXFSaXF2Q0g3SGtHZFhreHdVZ0NtMm9LS00yP2ZpbGVuYW1lPWltZy1zcS0wMS5wbmfiMXpWrgvZWrYjcWHkAQz7xntmuiNFxTvSth93VSSCBNhIANz7T8LlNAUAAAAAAAAgVLWujDnFPn0Z4YfSPNlc3vaewB+oWOHPWG1ZjiC4PzPiMXpWrgvZWrYjcWHkAQz7xntmugEAAAAAAAAA0AcAAAAAAAA=")
+        print(Data(mintNftData).toHexString())
         var reader = BinaryReader(bytes: mintNftData)
         let mintTransaction = try SuiTransactionData(from: &reader)
         

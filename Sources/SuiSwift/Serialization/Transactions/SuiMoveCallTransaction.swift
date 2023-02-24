@@ -23,8 +23,9 @@ public enum SuiJsonValue{
     case CallArg(SuiCallArg)
     case Array([SuiJsonValue])
 }
+
 public struct SuiMoveCallTransaction: SuiUnserializedSignableTransaction{
-    public var packageObjectId: SuiObjectId
+    public var packageObjectId: String
     public var module: String
     public var function: String
     public var typeArguments: TypeArguments
@@ -43,9 +44,9 @@ public struct SuiMoveCallTransaction: SuiUnserializedSignableTransaction{
     public func bcsTransaction(provider: SuiJsonRpcProvider) -> Promise<SuiTransaction> {
         return Promise { seal in
             DispatchQueue.global().async(.promise){
-                guard let packageObjectRef = try? provider.getObjectRef(objectId: packageObjectId).wait() else{
-                    throw SuiError.BCSError.SerializeError("Serialize SuiMoveCallTransaction GetObjectRef Error, packageObjectId == \(packageObjectId)")
-                }
+//                guard let packageObjectRef = try? provider.getObjectRef(objectId: packageObjectId).wait() else{
+//                    throw SuiError.BCSError.SerializeError("Serialize SuiMoveCallTransaction GetObjectRef Error, packageObjectId == \(packageObjectId)")
+//                }
                 var typeTags = [SuiTypeTag]()
                 var arguments = [SuiCallArg]()
                 switch typeArguments{
@@ -55,7 +56,7 @@ public struct SuiMoveCallTransaction: SuiUnserializedSignableTransaction{
                     typeTags = tags
                 }
                 arguments = try SuiCallArgSerializer(provider: provider).serializeMoveCallArguments(txn: self).wait()
-                seal.fulfill(.MoveCallTx(SuiMoveCallTx(package: packageObjectRef, module: module, function: function, typeArguments: typeTags, arguments: arguments)))
+                seal.fulfill(.MoveCallTx(SuiMoveCallTx(package: try SuiAddress(value: packageObjectId), module: module, function: function, typeArguments: typeTags, arguments: arguments)))
                 
             }.catch { error in
                 seal.reject(error)

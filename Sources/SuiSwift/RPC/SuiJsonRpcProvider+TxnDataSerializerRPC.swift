@@ -49,7 +49,7 @@ extension SuiJsonRpcProvider{
                 }
                 let gasPayment =  try self.getObjectRef(objectId: gasPaymentId!).wait()
                 let bcsTransaction = try tx.bcsTransaction(provider: self).wait()
-                seal.fulfill(SuiTransactionData(sender: signerAddress.value, gasBudget: tx.gasBudget, gasPrice: gasPrice!, kind: .Single(bcsTransaction), gasPayment: gasPayment!))
+                seal.fulfill(SuiTransactionData(kind: .Single(bcsTransaction), sender: signerAddress, gasData: SuiGasData(payment: gasPayment!, owner: signerAddress)))
                 
             }.catch { error in
                 seal.reject(error)
