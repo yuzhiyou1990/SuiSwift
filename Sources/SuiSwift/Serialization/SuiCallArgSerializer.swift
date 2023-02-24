@@ -51,12 +51,13 @@ public class SuiCallArgSerializer{
             }
         }
     }
+    
     public func serializeMoveCallArguments(txn: SuiMoveCallTransaction) -> Promise<[SuiCallArg]> {
         return Promise { seal in
             DispatchQueue.global().async(.promise){
                 let userParams = try self.extractNormalizedFunctionParams(packageId: txn.packageObjectId, module: txn.module, functionName: txn.function).wait()
                 let allCallPromise = userParams.enumerated().map { (index, param) in
-                    self.newCallArg(expectedType: param, argVal: txn.arguments[index])
+                    self.newCallArg(expectedType: param, callArgument: txn.arguments[index])
                 }
                 var allCallArg = [SuiCallArg]()
                 when(resolved: allCallPromise).wait().forEach { result in
@@ -93,51 +94,58 @@ public class SuiCallArgSerializer{
             }
         }
     }
+    // https://github.com/MystenLabs/sui/pull/7765/files
     
-    private func newCallArg(expectedType: SuiMoveNormalizedType, argVal: SuiJsonValue) -> Promise<SuiCallArg>{
+    private func newCallArg(expectedType: SuiMoveNormalizedType, callArgument: MoveCallArgument) -> Promise<SuiCallArg>{
         return Promise { seal in
-            let serType = try self.getPureSerializationType(normalizedType: expectedType, argVal: argVal)
-            if serType != nil{
-                var data = Data()
-                try serType?.serialize(to: &data)
-                seal.fulfill(.Pure(data.bytes))
-                return
-            }
-            let structVal = expectedType.extractStructTag()
-            if structVal != nil{
-                if case .MoveNormalizedTypeParameterType(_) = expectedType {
-                    // argVal: objectId
-                    guard let value = argVal.value() as? String else{
-                        seal.reject(SuiError.DataSerializerError.ParseError("\(SuiCallArgSerializer.MOVE_CALL_SER_ERROR) expect the argument to be an object id string, got {\(argVal.value()) null 2}"))
-                        return
-                    }
-                    seal.fulfill(.Object(try newObjectArg(objectId: value).wait()))
+            switch callArgument {
+            case .JsonValue(let argVal):
+                let serType = try self.getPureSerializationType(normalizedType: expectedType, argVal: argVal)
+                if serType != nil{
+                    var data = Data()
+                    try serType?.serialize(to: &data)
+                    seal.fulfill(.Pure(data.bytes))
                     return
                 }
-            }
-            if case .Vector(let suiMoveNormalizedTypeVector) = expectedType {
-                if case .MoveNormalizedStructType(_) = suiMoveNormalizedTypeVector.vector {
-                    guard let value = argVal.value() as? Array<String> else{
-                        seal.reject(SuiError.DataSerializerError.ParseError("Expect \(argVal) to be a array, received \(type(of: argVal.value()))"))
-                        return
-                    }
-                    let allCallPromise = value.map { objectId in
-                        self.newObjectArg(objectId: objectId)
-                    }
-                    var objectArgs = [SuiObjectArg]()
-                    when(resolved: allCallPromise).wait().forEach { result in
-                        switch result{
-                        case .fulfilled(let arg):
-                            objectArgs.append(arg)
-                        case .rejected(let error):
-                            debugPrint("newObjectArg error: \(error)")
+                let structVal = expectedType.extractStructTag()
+                if structVal != nil{
+                    if case .MoveNormalizedTypeParameterType(_) = expectedType {
+                        // argVal: objectId
+                        guard let value = argVal.value() as? String else{
+                            seal.reject(SuiError.DataSerializerError.ParseError("\(SuiCallArgSerializer.MOVE_CALL_SER_ERROR) expect the argument to be an object id string, got {\(argVal.value()) null 2}"))
+                            return
                         }
+                        seal.fulfill(.Object(try newObjectArg(objectId: value).wait()))
+                        return
                     }
-                    seal.fulfill(.ObjVec(objectArgs))
-                    return
                 }
+                // Vector(struct{})
+                if case .Vector(let suiMoveNormalizedTypeVector) = expectedType {
+                    if case .MoveNormalizedStructType(_) = suiMoveNormalizedTypeVector.vector {
+                        guard let value = argVal.value() as? Array<String> else{
+                            seal.reject(SuiError.DataSerializerError.ParseError("Expect \(argVal) to be a array, received \(type(of: argVal.value()))"))
+                            return
+                        }
+                        let allCallPromise = value.map { objectId in
+                            self.newObjectArg(objectId: objectId)
+                        }
+                        var objectArgs = [SuiObjectArg]()
+                        when(resolved: allCallPromise).wait().forEach { result in
+                            switch result{
+                            case .fulfilled(let arg):
+                                objectArgs.append(arg)
+                            case .rejected(let error):
+                                debugPrint("newObjectArg error: \(error)")
+                            }
+                        }
+                        seal.fulfill(.ObjVec(objectArgs))
+                        return
+                    }
+                }
+                seal.reject(SuiError.DataSerializerError.ParseError("Unknown call arg type \(expectedType), for value \(argVal.value())"))
+            case .PureArg(let array):
+                seal.fulfill(.Pure(array))
             }
-            seal.reject(SuiError.DataSerializerError.ParseError("Unknown call arg type \(expectedType), for value \(argVal.value())"))
         }
     }
     
@@ -164,44 +172,45 @@ public class SuiCallArgSerializer{
        * will be skipped. This is useful in the case where `normalizedType` is a vector<T>
        * and `argVal` is an empty array, the data validation for the inner types will be skipped.
        */
-    private func getPureSerializationType(normalizedType: SuiMoveNormalizedType, argVal: SuiJsonValue?) throws -> SuiTypeArgument?{
+    private func getPureSerializationType(normalizedType: SuiMoveNormalizedType, argVal: SuiJsonValue) throws -> BorshSerializable?{
         let allowedTypes = ["Address", "Bool", "U8", "U16", "U32", "U64", "U128", "U256"]
-        
         switch normalizedType {
         case .Str(let string):
-            guard allowedTypes.contains(string), let type = SuiTypeTag.parseBase(str: string.lowercased())  else{
+            guard allowedTypes.contains(string), let bcsValue = SuiTypeTag.parseArgWithType(normalizedType: string, jsonValue: argVal)  else{
                 throw SuiError.DataSerializerError.ParseError("unknown pure normalized type \(string)")
             }
-            return .TypeTag(type, argVal)
+            return bcsValue
         case .Vector(let suiMoveNormalizedTypeVector):
             if case .Str(let string) = suiMoveNormalizedTypeVector.vector, string == "U8"{
-                if argVal == nil{
-                    return .String(nil)
-                } else {
-                    if case .Str(let str) = argVal! {
-                        return .String(str)
-                    }
-                }
+                if case .Str(let str) = argVal {
+                    return str
+                } else {return nil}
             }
-            var jsonValue: SuiJsonValue?
-            if argVal != nil {
-                if case .Array(let values) = argVal!{
-                    jsonValue = values.first
-                } else{
-                    throw SuiError.DataSerializerError.ParseError("Expect \(argVal!) to be a array")
+            if case .Array(let values) = argVal{
+                var argsBCS = Array<BorshSerializable>()
+                for value in values {
+                    let inner = try self.getPureSerializationType(normalizedType: suiMoveNormalizedTypeVector.vector, argVal: value)
+                    if inner != nil{
+                        argsBCS.append(inner!)
+                        
+                    } else {return nil}
                 }
+            } else{
+                throw SuiError.DataSerializerError.ParseError("Expect \(argVal) to be a array")
             }
-            let innerType = try self.getPureSerializationType(normalizedType: suiMoveNormalizedTypeVector.vector, argVal: jsonValue)
-            return innerType != nil ? .Vector(innerType) : nil
-            
+        
         case .MoveNormalizedStructType(let suiMoveNormalizedStructType):
-            let value = argVal?.value() as? String
-            if SuiStructType.RESOLVED_ASCII_STR == suiMoveNormalizedStructType.structType{
-                return .String(value)
-            } else if SuiStructType.RESOLVED_UTF8_STR == suiMoveNormalizedStructType.structType{
-                return .Utf8string(value)
-            } else if SuiStructType.RESOLVED_SUI_ID == suiMoveNormalizedStructType.structType{
-                return .Address(value)
+            if let value = argVal.value() as? String {
+                if SuiStructType.RESOLVED_ASCII_STR == suiMoveNormalizedStructType.structType{
+                    return ASCIIString(value: value)
+                } else if SuiStructType.RESOLVED_UTF8_STR == suiMoveNormalizedStructType.structType{
+                    return value
+                } else if SuiStructType.RESOLVED_SUI_ID == suiMoveNormalizedStructType.structType{
+                    return try SuiAddress(value: value)
+                } else if SuiStructType.RESOLVED_STD_OPTION == suiMoveNormalizedStructType.structType{
+                    let argumentType = suiMoveNormalizedStructType.structType.type_arguments[0]
+                    return try getPureSerializationType(normalizedType: argumentType, argVal: argVal)
+                }
             }
         default:
             return nil
@@ -217,5 +226,36 @@ public class SuiCallArgSerializer{
             return false
         }
         return true
+    }
+}
+
+extension SuiTypeTag{
+    // normalizedType === 'string
+    public static func parseArgWithType(normalizedType type: String, jsonValue arg: SuiJsonValue) -> BorshSerializable?{
+        if type == "address" {
+            guard let value =  arg.value() as? String,
+                  let address = try? SuiAddress(value: value) else{
+                return nil
+            }
+            return address
+        } else if type == "bool" {
+            guard let value = arg.value() as? Bool else{
+                return nil
+            }
+            return value
+        } else if type == "u8" {
+            return nil
+        } else if type == "u16" {
+            return nil
+        } else if type == "u32" {
+            return nil
+        } else if type == "u64" {
+            return nil
+        } else if type == "u128" {
+            return nil
+        } else if type == "u256" {
+            return nil
+        }
+        return nil
     }
 }

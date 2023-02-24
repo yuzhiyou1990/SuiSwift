@@ -96,7 +96,7 @@ extension SuiJsonRpcProvider{
         let params = objectIds.map{(RPCMethod.GetObject, [$0])}
         return  self.sendBatchRequest(params: params)
     }
-    
+    // new version
     public func executeExecuteTransactionSerializedSigWithRequestType(signedTransaction: SuiSignedTransaction, requestType: SuiExecuteTransactionRequestType = .WaitForLocalExecution) -> Promise<SuiExecuteTransactionResponse>{
         var serialized_sig = [UInt8]()
         serialized_sig.append(signedTransaction.signatureScheme.rawValue)
@@ -105,9 +105,14 @@ extension SuiJsonRpcProvider{
         return self.sendRequest(method: .ExecuteTransactionSerializedSig, params: [signedTransaction.txnBytes, serialized_sig.toBase64(), requestType.rawValue])
     }
     
-    public func executeTransactionWithRequestType(signedTransaction: SuiSignedTransaction, requestType: SuiExecuteTransactionRequestType = .WaitForTxCert) -> Promise<SuiExecuteTransactionResponse> {
-        return executeTransactionWithRequestType(txnBytes: signedTransaction.txnBytes, signatureScheme: signedTransaction.signatureScheme, signature: signedTransaction.signature, pubkey: signedTransaction.pubkey, requestType: requestType)
+    public func executeExecuteTransactionWithRequestType(signedTransaction: SuiSignedTransaction, requestType: SuiExecuteTransactionRequestType = .WaitForLocalExecution) -> Promise<String>{
+        var serialized_sig = [UInt8]()
+        serialized_sig.append(signedTransaction.signatureScheme.rawValue)
+        serialized_sig.append(contentsOf: Array(base64: signedTransaction.signature))
+        serialized_sig.append(contentsOf: Array(base64: signedTransaction.pubkey))
+        return self.sendRequest(method: .ExecuteTransactionSerializedSig, params: [signedTransaction.txnBytes, serialized_sig.toBase64(), requestType.rawValue])
     }
+    
     /**
        * This is under development endpoint on Fullnode that will eventually
        * replace the other `executeTransaction` that's only available on the

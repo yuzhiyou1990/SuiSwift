@@ -15,7 +15,7 @@ public protocol SuiUnserializedSignableTransaction{
     //
     func gasObjectId() -> SuiObjectId?
     // asynchronous
-    func bcsTransaction() -> Promise<SuiTransaction>
+    func bcsTransaction(provider: SuiJsonRpcProvider) -> Promise<SuiTransaction>
     /**
       * Returns a list of object ids used in the transaction, including the gas payment object
       */
@@ -31,6 +31,7 @@ extension SuiUnserializedSignableTransaction{
         }
         return .Struct(arg)
     }
+    
 }
 
 extension SuiJsonRpcProvider{
@@ -47,7 +48,7 @@ extension SuiJsonRpcProvider{
                     return
                 }
                 let gasPayment =  try self.getObjectRef(objectId: gasPaymentId!).wait()
-                let bcsTransaction = try tx.bcsTransaction().wait()
+                let bcsTransaction = try tx.bcsTransaction(provider: self).wait()
                 seal.fulfill(SuiTransactionData(sender: signerAddress.value, gasBudget: tx.gasBudget, gasPrice: gasPrice!, kind: .Single(bcsTransaction), gasPayment: gasPayment!))
                 
             }.catch { error in

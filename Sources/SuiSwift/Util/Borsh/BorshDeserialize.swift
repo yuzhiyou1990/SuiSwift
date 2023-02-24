@@ -75,6 +75,15 @@ extension String: BorshDeserializable {
     }
 }
 
+extension ASCIIString: BorshDeserializable {
+    public init(from reader: inout BinaryReader) throws {
+        let count: UInt32 = try UVarInt.init(from: &reader).value
+        let bytes = reader.read(count: count)
+        guard let value = String(bytes: bytes, encoding: .ascii) else { throw SuiError.BCSError.DeserializeError() }
+        self = .init(value: value)
+    }
+}
+
 extension SuiAddress: BorshDeserializable {
     public init(from reader: inout BinaryReader) throws {
         let bytes = reader.read(count: 20)

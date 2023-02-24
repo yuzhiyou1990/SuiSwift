@@ -77,7 +77,6 @@ public class SuiJsonRpcProvider{
             }
         }
     }
-    
     private func request(body: Data) -> Promise<Data>{
         let rp = Promise<Data>.pending()
         var task: URLSessionTask?

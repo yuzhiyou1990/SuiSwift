@@ -29,3 +29,9 @@ public struct Base64String{
         self.value = value
     }
 }
+public struct ASCIIString{
+    public let value: String
+    public init(value: String) {
+        self.value = value
+    }
+}
