@@ -97,6 +97,9 @@ public struct SuiMoveNormalizedTypeVector: Decodable{
     enum CodingKeys: String, CodingKey {
         case vector = "Vector"
     }
+    public init(vector: SuiMoveNormalizedType) {
+        self.vector = vector
+    }
 }
 public struct SuiMoveNormalizedFunction: Decodable{
     public var visibility: SuiMoveVisibility

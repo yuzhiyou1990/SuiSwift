@@ -21,7 +21,7 @@ public struct SuiPublishTransaction: SuiUnserializedSignableTransaction{
         self.gasPayment = gasPayment
         self.gasBudget = gasBudget
     }
-    public func bcsTransaction() -> Promise<SuiTransaction> {
+    public func bcsTransaction(provider: SuiJsonRpcProvider) -> Promise<SuiTransaction> {
         return Promise { seal in
             DispatchQueue.global().async{
                 switch compiledModules {

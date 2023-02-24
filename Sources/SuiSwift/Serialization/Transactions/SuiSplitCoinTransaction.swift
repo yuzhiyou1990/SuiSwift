@@ -10,30 +10,32 @@ import PromiseKit
 
 public struct SuiSplitCoinTransaction: SuiUnserializedSignableTransaction{
     public var packageObjectId: SuiObjectId
-    public var coinObject: SuiGetObjectDataResponse
+    public var coinObjectId: SuiObjectId
     public var splitAmounts: [UInt64]
     public var gasPayment: SuiObjectId?
     public var gasBudget: UInt64
-    public init(packageObjectId: SuiObjectId, coinObject: SuiGetObjectDataResponse, splitAmounts: [UInt64], gasPayment: SuiObjectId? = nil, gasBudget: UInt64) {
+    public init(packageObjectId: SuiObjectId, coinObjectId: SuiObjectId, splitAmounts: [UInt64], gasPayment: SuiObjectId? = nil, gasBudget: UInt64) {
         self.packageObjectId = packageObjectId
-        self.coinObject = coinObject
+        self.coinObjectId = coinObjectId
         self.splitAmounts = splitAmounts
         self.gasPayment = gasPayment
         self.gasBudget = gasBudget
     }
-    public func bcsTransaction() -> Promise<SuiTransaction> {
+    public func bcsTransaction(provider: SuiJsonRpcProvider) -> Promise<SuiTransaction> {
         return Promise { seal in
             DispatchQueue.global().async(.promise){
-                guard let id = coinObject.getObjectId() else{
-                    throw SuiError.BCSError.SerializeError("Serialize SuiSplitCoinTransaction Error")
+                guard let objectDataResponse = try? provider.getObject(objectId: coinObjectId).wait() else{
+                    throw SuiError.BCSError.SerializeError("Serialize SuiSplitCoinTransaction GetObject Error, coinObjectId == \(coinObjectId)")
                 }
+                let typeArguments = TypeArguments.TypeTags([try getCoinStructTag(coin: objectDataResponse)])
+                let arguments = [MoveCallArgument.JsonValue(.Str(coinObjectId)), MoveCallArgument.JsonValue(.Array(splitAmounts.map{.Number($0)}))]
                 seal.fulfill(try SuiMoveCallTransaction(packageObjectId: packageObjectId,
                                                               module: PAY_MODULE_NAME,
                                                               function: PAY_JOIN_COIN_FUNC_NAME,
-                                                              typeArguments: .TypeTags([try getCoinStructTag(coin: coinObject)]),
-                                                              arguments: [.Str(id), .Array(splitAmounts.map{.Number($0)})],
+                                                              typeArguments: typeArguments,
+                                                              arguments: arguments,
                                                               gasPayment: gasPayment,
-                                                              gasBudget: gasBudget).bcsTransaction().wait())
+                                                              gasBudget: gasBudget).bcsTransaction(provider: provider).wait())
             }.catch { error in
                 seal.reject(error)
             }
@@ -41,9 +43,6 @@ public struct SuiSplitCoinTransaction: SuiUnserializedSignableTransaction{
     }
     public func extractObjectIds() throws -> [SuiObjectId] {
         var objectIds = [SuiObjectId]()
-        guard let coinObjectId = coinObject.getObjectId() else{
-            throw SuiError.BCSError.SerializeError("Serialize SuiSplitCoinTransaction Error")
-        }
         objectIds.append(coinObjectId)
         if gasPayment != nil{
             objectIds.append(gasPayment!)

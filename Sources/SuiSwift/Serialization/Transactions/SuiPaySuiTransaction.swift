@@ -19,10 +19,10 @@ public struct SuiPaySuiTransaction: SuiUnserializedSignableTransaction{
         self.amounts = amounts
         self.gasBudget = gasBudget
     }
-    public func bcsTransaction() -> Promise<SuiTransaction> {
+    public func bcsTransaction(provider: SuiJsonRpcProvider) -> Promise<SuiTransaction> {
         return Promise { seal in
             DispatchQueue.global().async{
-                let allPromise = self.inputCoins.compactMap{SuiJsonRpcProvider.shared.getObjectRef(objectId: $0)}
+                let allPromise = self.inputCoins.compactMap{provider.getObjectRef(objectId: $0)}
                 var inputCoinRefs = [SuiObjectRef?]()
                 when(resolved: allPromise).wait().forEach({ result in
                     switch result{

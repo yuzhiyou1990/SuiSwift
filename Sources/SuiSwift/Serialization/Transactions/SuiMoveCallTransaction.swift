@@ -8,26 +8,31 @@
 import Foundation
 import PromiseKit
 
-public typealias SuiJsonValue = SuiMoveCallTransaction.SuiJsonValue
+public enum TypeArguments{
+    case Strings([String])
+    case TypeTags([SuiTypeTag])
+}
+public enum MoveCallArgument{
+    case JsonValue(SuiJsonValue)
+    case PureArg([UInt8])
+}
+public enum SuiJsonValue{
+    case Boolean(Bool)
+    case Number(UInt64)
+    case Str(String)
+    case CallArg(SuiCallArg)
+    case Array([SuiJsonValue])
+}
+
 public struct SuiMoveCallTransaction: SuiUnserializedSignableTransaction{
-    public enum SuiJsonValue{
-        case Boolean(Bool)
-        case Number(UInt64)
-        case Str(String)
-        case Array([SuiJsonValue])
-    }
-    public enum TypeArguments{
-        case Strings([String])
-        case TypeTags([SuiTypeTag])
-    }
-    public var packageObjectId: SuiObjectId
+    public var packageObjectId: String
     public var module: String
     public var function: String
     public var typeArguments: TypeArguments
-    public var arguments: [SuiJsonValue]
+    public var arguments: [MoveCallArgument]
     public var gasPayment: SuiObjectId?
     public var gasBudget: UInt64
-    public init(packageObjectId: SuiObjectId, module: String, function: String, typeArguments: TypeArguments, arguments: [SuiJsonValue], gasPayment: SuiObjectId? = nil, gasBudget: UInt64) {
+    public init(packageObjectId: SuiObjectId, module: String, function: String, typeArguments: TypeArguments, arguments: [MoveCallArgument], gasPayment: SuiObjectId? = nil, gasBudget: UInt64) {
         self.packageObjectId = packageObjectId
         self.module = module
         self.function = function
@@ -36,22 +41,22 @@ public struct SuiMoveCallTransaction: SuiUnserializedSignableTransaction{
         self.gasPayment = gasPayment
         self.gasBudget = gasBudget
     }
-    public func bcsTransaction() -> Promise<SuiTransaction> {
+    public func bcsTransaction(provider: SuiJsonRpcProvider) -> Promise<SuiTransaction> {
         return Promise { seal in
             DispatchQueue.global().async(.promise){
-                guard let packageObjectRef = try? SuiJsonRpcProvider.shared.getObjectRef(objectId: packageObjectId).wait() else{
-                    throw SuiError.BCSError.SerializeError("Serialize SuiMoveCallTransaction GetObjectRef Error, packageObjectId == \(packageObjectId)")
-                }
+//                guard let packageObjectRef = try? provider.getObjectRef(objectId: packageObjectId).wait() else{
+//                    throw SuiError.BCSError.SerializeError("Serialize SuiMoveCallTransaction GetObjectRef Error, packageObjectId == \(packageObjectId)")
+//                }
                 var typeTags = [SuiTypeTag]()
                 var arguments = [SuiCallArg]()
                 switch typeArguments{
                 case .Strings(let strs):
-                   try strs.forEach {typeTags = try SuiTypeTag.parseStructTypeTag(str: $0)}
+                    try strs.forEach {typeTags.append(try SuiTypeTag.parseFromStr(str: $0))}
                 case .TypeTags(let tags):
                     typeTags = tags
                 }
-                arguments = try SuiCallArgSerializer().serializeMoveCallArguments(txn: self).wait()
-                seal.fulfill(.MoveCallTx(SuiMoveCallTx(package: packageObjectRef, module: module, function: function, typeArguments: typeTags, arguments: arguments)))
+                arguments = try SuiCallArgSerializer(provider: provider).serializeMoveCallArguments(txn: self).wait()
+                seal.fulfill(.MoveCallTx(SuiMoveCallTx(package: try SuiAddress(value: packageObjectId), module: module, function: function, typeArguments: typeTags, arguments: arguments)))
                 
             }.catch { error in
                 seal.reject(error)
@@ -83,6 +88,8 @@ extension SuiJsonValue{
             return bool as AnyObject
         case .Number(let number):
             return number as AnyObject
+        case .CallArg(let array):
+            return array as AnyObject
         }
     }
     public func encode(type: SuiTypeTag, to writer: inout Data) throws{

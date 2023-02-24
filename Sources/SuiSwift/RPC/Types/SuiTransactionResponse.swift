@@ -114,7 +114,6 @@ public enum SuiExecuteTransactionResponse: Decodable{
 }
 // https://github.com/MystenLabs/sui/blob/d5045359107fc7abae5d466b8d71ee009d2eb96e/crates/sui-framework/sources/governance/sui_system.move
 public struct SuiSystemState: Decodable{
-    public var chain_id: UInt64
     public var epoch: UInt64
     public var reference_gas_price: UInt64
     public var validators: AnyCodable

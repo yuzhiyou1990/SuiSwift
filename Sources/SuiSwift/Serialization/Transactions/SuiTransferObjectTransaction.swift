@@ -19,10 +19,10 @@ public struct SuiTransferObjectTransaction: SuiUnserializedSignableTransaction{
         self.gasBudget = gasBudget
         self.recipient = recipient
     }
-    public func bcsTransaction() -> Promise<SuiTransaction> {
+    public func bcsTransaction(provider: SuiJsonRpcProvider) -> Promise<SuiTransaction> {
         return Promise { seal in
             DispatchQueue.global().async(.promise){
-                guard let objectRef = try? SuiJsonRpcProvider.shared.getObjectRef(objectId: objectId).wait() else{
+                guard let objectRef = try? provider.getObjectRef(objectId: objectId).wait() else{
                     throw SuiError.BCSError.SerializeError("Serialize SuiTransferObjectTransaction Error")
                 }
                 seal.fulfill(.TransferObjectTx(SuiTransferObjectTx(recipient: recipient.value, object_ref: objectRef)))

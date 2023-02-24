@@ -69,6 +69,15 @@ extension String: BorshSerializable {
     }
 }
 
+extension ASCIIString: BorshSerializable {
+    public func serialize(to writer: inout Data) throws {
+        guard let data = value.data(using: .ascii) else{
+            throw SuiError.BCSError.SerializeError("Serialize ASCIIString Error")
+        }
+        try UVarInt(data.count).serialize(to: &writer)
+        writer.append(data)
+    }
+}
 extension Base64String: BorshSerializable{
     public func serialize(to writer: inout Data) throws {
         let data = Data(Array(base64: value))

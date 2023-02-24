@@ -19,7 +19,7 @@ public struct SuiTransferSuiTransaction: SuiUnserializedSignableTransaction{
         self.recipient = recipient
         self.amount = amount
     }
-    public func bcsTransaction() -> Promise<SuiTransaction> {
+    public func bcsTransaction(provider: SuiJsonRpcProvider) -> Promise<SuiTransaction> {
         return Promise { seal in
             DispatchQueue.global().async{
                 seal.fulfill(.TransferSuiTx(SuiTransferSuiTx(recipient: recipient.value, amount: amount)))
