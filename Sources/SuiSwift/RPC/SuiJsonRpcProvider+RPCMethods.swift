@@ -8,6 +8,7 @@
 import Foundation
 import PromiseKit
 import BigInt
+import AnyCodable
 
 extension SuiJsonRpcProvider{
     public enum RPCMethod: String, Encodable{
@@ -15,6 +16,7 @@ extension SuiJsonRpcProvider{
         case GetObject = "sui_getObject"
         case RpcApiVersion = "rpc.discover"
         case GetSuiSystemState = "sui_getSuiSystemState"
+        case GetReferenceGasPrice = "sui_getReferenceGasPrice"
         //version?.minor < 18
         case ExecuteTransaction = "sui_executeTransaction"
         //0.19.0
@@ -29,6 +31,9 @@ extension SuiJsonRpcProvider{
     
     public func getSuiSystemState() -> Promise<SuiSystemState> {
         return  self.sendRequest(method: .GetSuiSystemState, params: try! JSONSerialization.data(withJSONObject: [], options: []))
+    }
+    public func getReferenceGasPrice() -> Promise<UInt64> {
+        return  self.sendRequest(method: .GetReferenceGasPrice, params: try! JSONSerialization.data(withJSONObject: [], options: []))
     }
     /**
        * Returns the estimated gas cost for the transaction
@@ -105,7 +110,7 @@ extension SuiJsonRpcProvider{
         return self.sendRequest(method: .ExecuteTransactionSerializedSig, params: [signedTransaction.txnBytes, serialized_sig.toBase64(), requestType.rawValue])
     }
     
-    public func executeExecuteTransactionWithRequestType(signedTransaction: SuiSignedTransaction, requestType: SuiExecuteTransactionRequestType = .WaitForLocalExecution) -> Promise<String>{
+    public func executeExecuteTransactionWithRequestType(signedTransaction: SuiSignedTransaction, requestType: SuiExecuteTransactionRequestType = .WaitForLocalExecution) -> Promise<AnyCodable>{
         var serialized_sig = [UInt8]()
         serialized_sig.append(signedTransaction.signatureScheme.rawValue)
         serialized_sig.append(contentsOf: Array(base64: signedTransaction.signature))

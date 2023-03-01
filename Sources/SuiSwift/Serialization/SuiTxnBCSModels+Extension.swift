@@ -1,6 +1,6 @@
 //
 //  File.swift
-//  
+//
 //
 //  Created by li shuai on 2022/11/15.
 //
@@ -11,11 +11,13 @@ extension SuiSharedObjectRef: BorshCodable{
     public func serialize(to writer: inout Data) throws {
         try objectId.serialize(to: &writer)
         try initialSharedVersion.serialize(to: &writer)
+        try mutable.serialize(to: &writer)
     }
     
     public init(from reader: inout BinaryReader) throws {
         objectId = try .init(from: &reader)
         initialSharedVersion = try .init(from: &reader)
+        mutable = try .init(from: &reader)
     }
 }
 
@@ -43,9 +45,6 @@ extension SuiObjectArg: BorshCodable{
         case .Shared(let suiSharedObjectRef):
             try UVarInt(1).serialize(to: &writer)
             try suiSharedObjectRef.serialize(to: &writer)
-        case .Shared_Deprecated(let string):
-            try UVarInt(2).serialize(to: &writer)
-            try string.serialize(to: &writer)
         }
     }
     
@@ -56,8 +55,6 @@ extension SuiObjectArg: BorshCodable{
             self = try .ImmOrOwned(SuiObjectRef(from: &reader))
         case 1:
             self = try .Shared(SuiSharedObjectRef(from: &reader))
-        case 2:
-            self = try .Shared_Deprecated(String(from: &reader))
         default:
             throw SuiError.BCSError.DeserializeError("Unknown variant index for SuiObjectArg: \(index)")
         }

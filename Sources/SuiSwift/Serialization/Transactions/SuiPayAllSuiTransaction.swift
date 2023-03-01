@@ -12,10 +12,12 @@ public struct SuiPayAllSuiTransaction: SuiUnserializedSignableTransaction{
     public var inputCoins: [SuiObjectId]
     public var recipient: SuiAddress
     public var gasBudget: UInt64
-    public init(inputCoins: [SuiObjectId], recipient: SuiAddress, gasBudget: UInt64) {
+    public var gasPrice: UInt64?
+    public init(inputCoins: [SuiObjectId], recipient: SuiAddress, gasBudget: UInt64, gasPrice: UInt64? = nil) {
         self.inputCoins = inputCoins
         self.recipient = recipient
         self.gasBudget = gasBudget
+        self.gasPrice = gasPrice
     }
     public func bcsTransaction(provider: SuiJsonRpcProvider) -> Promise<SuiTransaction> {
         return Promise { seal in

@@ -11,7 +11,8 @@ import BigInt
 
 public protocol SuiUnserializedSignableTransaction{
     //
-    var gasBudget: UInt64{get}
+    var gasBudget: UInt64{get set}
+    var gasPrice: UInt64?{get set}
     //
     func gasObjectId() -> SuiObjectId?
     // asynchronous
@@ -36,7 +37,7 @@ extension SuiUnserializedSignableTransaction{
 
 extension SuiJsonRpcProvider{
     
-    public func constructTransactionData(tx: SuiUnserializedSignableTransaction, signerAddress: SuiAddress, gasPrice: UInt64? = 1) -> Promise<SuiTransactionData> {
+    public func constructTransactionData(tx: SuiUnserializedSignableTransaction, signerAddress: SuiAddress) -> Promise<SuiTransactionData> {
         return Promise { seal in
             DispatchQueue.global().async(.promise){
                 var gasPaymentId: SuiObjectId? = tx.gasObjectId()
@@ -48,8 +49,16 @@ extension SuiJsonRpcProvider{
                     return
                 }
                 let gasPayment =  try self.getObjectRef(objectId: gasPaymentId!).wait()
+                if gasPayment == nil{
+                    seal.reject(SuiError.BuildTransactionError.ConstructTransactionDataError("Please select a valid gasPayment"))
+                    return
+                }
                 let bcsTransaction = try tx.bcsTransaction(provider: self).wait()
-                seal.fulfill(SuiTransactionData(kind: .Single(bcsTransaction), sender: signerAddress, gasData: SuiGasData(payment: gasPayment!, owner: signerAddress)))
+                var gasPrice = tx.gasPrice
+                if gasPrice == nil {
+                    gasPrice = try self.getReferenceGasPrice().wait()
+                }
+                seal.fulfill(SuiTransactionData(kind: .Single(bcsTransaction), sender: signerAddress, gasData: SuiGasData(payment: gasPayment!, owner: signerAddress, price: gasPrice!, budget: tx.gasBudget)))
                 
             }.catch { error in
                 seal.reject(error)

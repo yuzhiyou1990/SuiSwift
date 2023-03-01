@@ -23,16 +23,16 @@ public enum SuiJsonValue{
     case CallArg(SuiCallArg)
     case Array([SuiJsonValue])
 }
-
 public struct SuiMoveCallTransaction: SuiUnserializedSignableTransaction{
-    public var packageObjectId: String
+    public var packageObjectId: SuiObjectId
     public var module: String
     public var function: String
     public var typeArguments: TypeArguments
     public var arguments: [MoveCallArgument]
     public var gasPayment: SuiObjectId?
+    public var gasPrice: UInt64?
     public var gasBudget: UInt64
-    public init(packageObjectId: SuiObjectId, module: String, function: String, typeArguments: TypeArguments, arguments: [MoveCallArgument], gasPayment: SuiObjectId? = nil, gasBudget: UInt64) {
+    public init(packageObjectId: SuiObjectId, module: String, function: String, typeArguments: TypeArguments, arguments: [MoveCallArgument], gasPayment: SuiObjectId? = nil, gasBudget: UInt64, gasPrice: UInt64? = nil) {
         self.packageObjectId = packageObjectId
         self.module = module
         self.function = function
@@ -40,13 +40,11 @@ public struct SuiMoveCallTransaction: SuiUnserializedSignableTransaction{
         self.arguments = arguments
         self.gasPayment = gasPayment
         self.gasBudget = gasBudget
+        self.gasPrice = gasPrice
     }
     public func bcsTransaction(provider: SuiJsonRpcProvider) -> Promise<SuiTransaction> {
         return Promise { seal in
             DispatchQueue.global().async(.promise){
-//                guard let packageObjectRef = try? provider.getObjectRef(objectId: packageObjectId).wait() else{
-//                    throw SuiError.BCSError.SerializeError("Serialize SuiMoveCallTransaction GetObjectRef Error, packageObjectId == \(packageObjectId)")
-//                }
                 var typeTags = [SuiTypeTag]()
                 var arguments = [SuiCallArg]()
                 switch typeArguments{
