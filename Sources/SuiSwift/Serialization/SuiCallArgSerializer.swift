@@ -41,8 +41,6 @@ public class SuiCallArgSerializer{
                         objectIds.append(ref.objectId.value)
                     case .Shared(let ref):
                         objectIds.append(ref.objectId.value)
-                    case .Shared_Deprecated(_):
-                        break
                     }
                 }
                 seal.fulfill(objectIds)
@@ -155,7 +153,8 @@ public class SuiCallArgSerializer{
                 let object = try self.provider.getObject(objectId: objectId).wait()
                 let initialSharedVersion = object.getSharedObjectInitialVersion()
                 if initialSharedVersion != nil{
-                    seal.fulfill(.Shared(SuiSharedObjectRef(objectId: objectId, initialSharedVersion: UInt64(initialSharedVersion!))))
+                    // TODO: 需要检查
+                    seal.fulfill(.Shared(SuiSharedObjectRef(objectId: objectId, initialSharedVersion: UInt64(initialSharedVersion!), mutable: false)))
                     return
                 }
                 seal.fulfill(.ImmOrOwned(object.getObjectReference()!))

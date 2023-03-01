@@ -12,7 +12,6 @@ public protocol BorshSerializable {
     func serialize(to writer: inout Data) throws
 }
 
-
 extension UInt8: BorshSerializable {}
 extension UInt16: BorshSerializable {}
 extension UInt32: BorshSerializable {}
@@ -87,7 +86,16 @@ extension Base64String: BorshSerializable{
 }
 extension SuiAddress: BorshSerializable {
     public func serialize(to writer: inout Data) throws {
-        writer.append(Data(hex: value.stripHexPrefix()))
+        var addressData: Data = Data()
+        let addressValueData = Data(hex: value.stripHexPrefix())
+        if  addressValueData.count != SuiAddress.DATASIZE{
+            let fillData = Data(repeating: 0, count: SuiAddress.DATASIZE - addressValueData.count)
+            addressData.append(fillData)
+            addressData.append(Data(hex: value))
+        } else {
+            addressData = addressValueData
+        }
+        writer.append(addressData)
     }
 }
 

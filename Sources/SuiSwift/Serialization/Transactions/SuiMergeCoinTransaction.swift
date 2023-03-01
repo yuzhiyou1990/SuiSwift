@@ -9,17 +9,17 @@ import Foundation
 import PromiseKit
 
 public struct SuiMergeCoinTransaction: SuiUnserializedSignableTransaction{
-    public var packageObjectId: SuiObjectId
     public var primaryCoin: SuiObjectId
     public var coinToMerge: SuiObjectId
     public var gasPayment: SuiObjectId?
+    public var gasPrice: UInt64?
     public var gasBudget: UInt64
-    public init(packageObjectId: SuiObjectId, primaryCoin: SuiObjectId, coinToMerge: SuiObjectId, gasPayment: SuiObjectId? = nil, gasBudget: UInt64) {
-        self.packageObjectId = packageObjectId
+    public init( primaryCoin: SuiObjectId, coinToMerge: SuiObjectId, gasPayment: SuiObjectId? = nil, gasBudget: UInt64, gasPrice: UInt64? = nil) {
         self.primaryCoin = primaryCoin
         self.coinToMerge = coinToMerge
         self.gasPayment = gasPayment
         self.gasBudget = gasBudget
+        self.gasPrice = gasPrice
     }
     public func bcsTransaction(provider: SuiJsonRpcProvider) -> Promise<SuiTransaction> {
         return Promise { seal in
@@ -29,13 +29,14 @@ public struct SuiMergeCoinTransaction: SuiUnserializedSignableTransaction{
                 }
                 let typeArguments = TypeArguments.TypeTags([try getCoinStructTag(coin: objectDataResponse)])
                 let arguments = [MoveCallArgument.JsonValue(.Str(primaryCoin)), MoveCallArgument.JsonValue(.Str(coinToMerge))]
-                seal.fulfill( try SuiMoveCallTransaction(packageObjectId: packageObjectId,
-                                                    module: PAY_MODULE_NAME,
-                                                    function: PAY_JOIN_COIN_FUNC_NAME,
-                                                    typeArguments: typeArguments,
-                                                    arguments: arguments,
-                                                    gasPayment: gasPayment,
-                                                    gasBudget: gasBudget).bcsTransaction(provider: provider).wait())
+                seal.fulfill( try SuiMoveCallTransaction(packageObjectId: SUI_FRAMEWORK_ADDRESS,
+                                                         module: PAY_MODULE_NAME,
+                                                         function: PAY_JOIN_COIN_FUNC_NAME,
+                                                         typeArguments: typeArguments,
+                                                         arguments: arguments,
+                                                         gasPayment: gasPayment,
+                                                         gasBudget: gasBudget,
+                                                         gasPrice: gasPrice).bcsTransaction(provider: provider).wait())
             }.catch { error in
                 seal.reject(error)
             }

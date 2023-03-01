@@ -1,6 +1,6 @@
 //
 //  File.swift
-//  
+//
 //
 //  Created by li shuai on 2022/11/1.
 //
@@ -19,9 +19,11 @@ public struct SuiSharedObjectRef{
     public var objectId: SuiAddress
     /** The version the object was shared at */
     public var initialSharedVersion: UInt64
-    public init(objectId: String, initialSharedVersion: UInt64) {
+    public var mutable: Bool
+    public init(objectId: String, initialSharedVersion: UInt64, mutable: Bool) {
         self.objectId = try! SuiAddress(value: objectId)
         self.initialSharedVersion = initialSharedVersion
+        self.mutable = mutable
     }
 }
 /**
@@ -31,7 +33,6 @@ public struct SuiSharedObjectRef{
 public enum SuiObjectArg{
     case ImmOrOwned(SuiObjectRef)
     case Shared(SuiSharedObjectRef)
-    case Shared_Deprecated(String)
 }
 /**
  * An argument for the transaction. It is a 'meant' enum which expects to have

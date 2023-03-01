@@ -16,10 +16,12 @@ public struct SuiPublishTransaction: SuiUnserializedSignableTransaction{
     public var compiledModules: CompiledModules
     public var gasPayment: SuiObjectId?
     public var gasBudget: UInt64
-    public init(compiledModules: CompiledModules, gasPayment: SuiObjectId? = nil, gasBudget: UInt64) {
+    public var gasPrice: UInt64?
+    public init(compiledModules: CompiledModules, gasPayment: SuiObjectId? = nil, gasBudget: UInt64, gasPrice: UInt64? = nil) {
         self.compiledModules = compiledModules
         self.gasPayment = gasPayment
         self.gasBudget = gasBudget
+        self.gasPrice = gasPrice
     }
     public func bcsTransaction(provider: SuiJsonRpcProvider) -> Promise<SuiTransaction> {
         return Promise { seal in

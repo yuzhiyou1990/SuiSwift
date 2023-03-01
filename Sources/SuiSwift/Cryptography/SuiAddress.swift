@@ -11,11 +11,11 @@ import CryptoSwift
 public struct SuiAddress: Codable{
     public var value: String
     public var publicKeyHash: Data
-    private static let ADDRESS_SIZE = 40
+    public static let ADDRESS_SIZE = 40
+    public static var DATASIZE: Int{
+        return SuiAddress.ADDRESS_SIZE / 2
+    }
     public init(value: String) throws{
-        guard value.stripHexPrefix().count == SuiAddress.ADDRESS_SIZE else{
-            throw SuiError.KeypairError.InvalidAddress
-        }
         self.value = value
         self.publicKeyHash = Data(hex: value.stripHexPrefix())
     }
