@@ -84,8 +84,8 @@ extension SuiTypeTag{
                let module = structTag_map["module"] as? String,
                let name = structTag_map["name"] as? String,
                let typeParams = structTag_map["typeParams"] as? [Dictionary<String, AnyObject>]{
-                guard let typeTags = try? SuiTypeTag.getTypeTags(type_list: typeParams) else{return nil }
-                return .Struct(SuiStructTag(address: address, module: module, name: name, typeParams: typeTags))
+                guard let typeTags = try? SuiTypeTag.getTypeTags(type_list: typeParams), let _address = try? SuiAddress(value: address) else{return nil }
+                return .Struct(SuiStructTag(address: _address, module: module, name: name, typeParams: typeTags))
             }
             return nil
         default:
