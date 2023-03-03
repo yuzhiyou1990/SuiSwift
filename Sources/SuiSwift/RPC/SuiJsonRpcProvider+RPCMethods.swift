@@ -17,9 +17,12 @@ extension SuiJsonRpcProvider{
         case RpcApiVersion = "rpc.discover"
         case GetSuiSystemState = "sui_getSuiSystemState"
         case GetReferenceGasPrice = "sui_getReferenceGasPrice"
-        //version?.minor < 18
+        case GetAllBalances = "sui_getAllBalances"
+        case GetBalance = "sui_getBalance"
+        
+        // version?.minor < 18
         case ExecuteTransaction = "sui_executeTransaction"
-        //0.19.0
+        // 0.19.0
         case ExecuteTransactionSerializedSig = "sui_executeTransactionSerializedSig"
         case DryRunTransaction = "sui_dryRunTransaction"
         case GetMoveFunctionArgTypes = "sui_getMoveFunctionArgTypes"
@@ -32,8 +35,17 @@ extension SuiJsonRpcProvider{
     public func getSuiSystemState() -> Promise<SuiSystemState> {
         return  self.sendRequest(method: .GetSuiSystemState, params: try! JSONSerialization.data(withJSONObject: [], options: []))
     }
+    
     public func getReferenceGasPrice() -> Promise<UInt64> {
         return  self.sendRequest(method: .GetReferenceGasPrice, params: try! JSONSerialization.data(withJSONObject: [], options: []))
+    }
+    
+    public func getAllBalances(owner: String) -> Promise<[SuiCoinBalance]>{
+        return  self.sendRequest(method: .GetBalance, params: [owner])
+    }
+    
+    public func getBalance(owner: String, coin_type: String) -> Promise<SuiCoinBalance>{
+        return  self.sendRequest(method: .GetBalance, params: [owner, coin_type])
     }
     /**
        * Returns the estimated gas cost for the transaction

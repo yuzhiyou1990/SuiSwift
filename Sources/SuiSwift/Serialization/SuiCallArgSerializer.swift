@@ -107,25 +107,23 @@ public class SuiCallArgSerializer{
                 }
                 let structVal = expectedType.extractStructTag()
                 if structVal != nil{
-                    if case .MoveNormalizedTypeParameterType(_) = expectedType {
-                        // argVal: objectId
-                        guard let value = argVal.value() as? String else{
-                            seal.reject(SuiError.DataSerializerError.ParseError("\(SuiCallArgSerializer.MOVE_CALL_SER_ERROR) expect the argument to be an object id string, got {\(argVal.value()) null 2}"))
-                            return
-                        }
-                        seal.fulfill(.Object(try newObjectArg(objectId: value).wait()))
+                    // argVal: objectId
+                    guard let value = argVal.value() as? String else{
+                        seal.reject(SuiError.DataSerializerError.ParseError("\(SuiCallArgSerializer.MOVE_CALL_SER_ERROR) expect the argument to be an object id string, got {\(argVal.value()) null 2}"))
                         return
                     }
+                    seal.fulfill(.Object(try newObjectArg(objectId: value).wait()))
+                    return
                 }
                 // Vector(struct{})
                 if case .Vector(let suiMoveNormalizedTypeVector) = expectedType {
                     if case .MoveNormalizedStructType(_) = suiMoveNormalizedTypeVector.vector {
-                        guard let value = argVal.value() as? Array<String> else{
+                        guard let value = argVal.value() as? Array<SuiJsonValue> else{
                             seal.reject(SuiError.DataSerializerError.ParseError("Expect \(argVal) to be a array, received \(type(of: argVal.value()))"))
                             return
                         }
-                        let allCallPromise = value.map { objectId in
-                            self.newObjectArg(objectId: objectId)
+                        let allCallPromise = value.filter{if let _ = $0.value() as? String{return true} else{ return false}}.map { jsonValue in
+                            self.newObjectArg(objectId: jsonValue.value() as! String)
                         }
                         var objectArgs = [SuiObjectArg]()
                         when(resolved: allCallPromise).wait().forEach { result in
@@ -175,7 +173,7 @@ public class SuiCallArgSerializer{
         let allowedTypes = ["Address", "Bool", "U8", "U16", "U32", "U64", "U128", "U256"]
         switch normalizedType {
         case .Str(let string):
-            guard allowedTypes.contains(string), let bcsValue = SuiTypeTag.parseArgWithType(normalizedType: string, jsonValue: argVal)  else{
+            guard allowedTypes.contains(string), let bcsValue = SuiTypeTag.parseArgWithType(normalizedType: string.lowercased(), jsonValue: argVal)  else{
                 throw SuiError.DataSerializerError.ParseError("unknown pure normalized type \(string)")
             }
             return bcsValue

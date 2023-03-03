@@ -91,3 +91,9 @@ public struct SuiSystemState: Codable{
     public var reference_gas_price: UInt64
     public var validators: AnyCodable
 }
+public struct SuiCoinBalance: Codable{
+    public var coinType: String
+    public var coinObjectCount: UInt64
+    public var totalBalance: UInt64
+    public var lockedBalance: AnyCodable
+}

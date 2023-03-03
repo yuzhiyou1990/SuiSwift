@@ -254,7 +254,20 @@ extension SuiPayTransaction: SuiDappUnserializedSignableTransaction{
 }
 extension SuiPublishTransaction: SuiDappUnserializedSignableTransaction{
     public init(dic: Dictionary<String, AnyObject>) throws {
-        throw SuiError.DappError.DappParseError
+        guard let gasBudget = dic["gasBudget"] as? UInt64 else {
+            throw SuiError.DappError.OtherEror("Parse PublishTransaction Error")
+        }
+        let gasPayment = dic["gasPayment"] as? String
+        let gasPrice = dic["gasPrice"] as? UInt64
+        if let compiledModules = dic["compiledModules"] as? [String] {
+            self.init(compiledModules: .Array(compiledModules), gasPayment: gasPayment, gasBudget: gasBudget, gasPrice: gasPrice)
+            return
+        }
+        if let compiledModules = dic["compiledModules"] as? [[UInt8]] {
+            self.init(compiledModules: .Arrayx(compiledModules), gasPayment: gasPayment, gasBudget: gasBudget, gasPrice: gasPrice)
+            return
+        }
+        throw SuiError.DappError.OtherEror("Parse PublishTransaction Error")
     }
 }
 extension SuiSplitCoinTransaction: SuiDappUnserializedSignableTransaction{
