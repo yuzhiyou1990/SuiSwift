@@ -84,8 +84,8 @@ extension SuiTypeTag{
                let module = structTag_map["module"] as? String,
                let name = structTag_map["name"] as? String,
                let typeParams = structTag_map["typeParams"] as? [Dictionary<String, AnyObject>]{
-                guard let typeTags = try? SuiTypeTag.getTypeTags(type_list: typeParams) else{return nil }
-                return .Struct(SuiStructTag(address: address, module: module, name: name, typeParams: typeTags))
+                guard let typeTags = try? SuiTypeTag.getTypeTags(type_list: typeParams), let _address = try? SuiAddress(value: address) else{return nil }
+                return .Struct(SuiStructTag(address: _address, module: module, name: name, typeParams: typeTags))
             }
             return nil
         default:
@@ -263,8 +263,16 @@ extension SuiPublishTransaction: SuiDappUnserializedSignableTransaction{
             self.init(compiledModules: .Array(compiledModules), gasPayment: gasPayment, gasBudget: gasBudget, gasPrice: gasPrice)
             return
         }
-        if let compiledModules = dic["compiledModules"] as? [[UInt8]] {
-            self.init(compiledModules: .Arrayx(compiledModules), gasPayment: gasPayment, gasBudget: gasBudget, gasPrice: gasPrice)
+        if let compiledModules = dic["compiledModules"] as? [Dictionary<String, UInt8>] {
+            var modulesList = [[UInt8]]()
+            compiledModules.forEach { pureMap in
+                var pures = [UInt8]()
+                pureMap.sorted(by: {$0.0 < $1.0}).forEach { (_, value) in
+                    pures.append(value)
+                }
+                modulesList.append(pures)
+            }
+            self.init(compiledModules: .Arrayx(modulesList), gasPayment: gasPayment, gasBudget: gasBudget, gasPrice: gasPrice)
             return
         }
         throw SuiError.DappError.OtherEror("Parse PublishTransaction Error")

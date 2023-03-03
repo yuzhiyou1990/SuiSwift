@@ -15,11 +15,11 @@ public let SUI_STRUCT_NAME_REGEX = "^([^<]+)"
  * Kind of a TypeTag which is represented by a Move type identifier.
  */
 public struct SuiStructTag{
-    public var address: String
+    public var address: SuiAddress
     public var module: String
     public var name: String
     public var typeParams: [SuiTypeTag]
-    public init(address: String, module: String, name: String, typeParams: [SuiTypeTag]) {
+    public init(address: SuiAddress, module: String, name: String, typeParams: [SuiTypeTag]) {
         self.address = address
         self.module = module
         self.name = name
@@ -37,7 +37,7 @@ extension SuiStructTag: BorshCodable{
     }
     
     public init(from reader: inout BinaryReader) throws {
-        address = try String(from: &reader)
+        address = try SuiAddress(from: &reader)
         module = try String(from: &reader)
         name = try String(from: &reader)
         typeParams = try [SuiTypeTag](from: &reader)
@@ -159,7 +159,7 @@ extension SuiTypeTag{
             let nameRangeIndexs = structMatch[3].match(pattern: SUI_STRUCT_NAME_REGEX)
             let nameMatch: [String] = nameRangeIndexs.map { String(structMatch[3][$0]) }
             
-            return .Struct(SuiStructTag(address: structMatch[1].addHexPrefix(), module: structMatch[2], name: nameMatch[1], typeParams: try parseStructTypeTag(str: structMatch[3])))
+            return .Struct(SuiStructTag(address: try SuiAddress(value: structMatch[1].addHexPrefix()), module: structMatch[2], name: nameMatch[1], typeParams: try parseStructTypeTag(str: structMatch[3])))
         }
         throw SuiError.DataSerializerError.ParseError("Encounter unexpected token when parsing type args for \(str)")
     }

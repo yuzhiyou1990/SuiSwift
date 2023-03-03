@@ -73,10 +73,10 @@ public struct SuiCoin{
     
     public static func getCoinStructTag(coinTypeArg: String) -> SuiStructTag?{
         let args = coinTypeArg.components(separatedBy: "::")
-        guard args.count == 3 else{
+        guard args.count == 3, let address = try? SuiAddress(value: args[0]) else{
             return nil
         }
-        return SuiStructTag(address: args[0], module: args[1], name: args[2], typeParams: [])
+        return SuiStructTag(address: address, module: args[1], name: args[2], typeParams: [])
     }
     
     public static func getID<T>(data: T) -> SuiObjectId? where T: SuiObjectData{

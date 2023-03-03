@@ -61,7 +61,7 @@ final class SuiSwiftTests: XCTestCase {
     }
     
     func test_decode_moveCall_nft_bcs() throws{
-        let mintNftData = Array(base64: "AAIAAAAAAAAAAAAAAAAAAAAAAAAAAgpkZXZuZXRfbmZ0BG1pbnQAAwAMC0V4YW1wbGUgTkZUAB0cQW4gTkZUIGNyZWF0ZWQgYnkgU3VpIFdhbGxldABNTGlwZnM6Ly9RbVpQV1d5NVNpNTRSM2QyNnRvYXFSaXF2Q0g3SGtHZFhreHdVZ0NtMm9LS00yP2ZpbGVuYW1lPWltZy1zcS0wMS5wbmfiMXpWrgvZWrYjcWHkAQz7xntmuiNFxTvSth93VSSCBNhIANz7T8LlNAUAAAAAAAAgVLWujDnFPn0Z4YfSPNlc3vaewB+oWOHPWG1ZjiC4PzPiMXpWrgvZWrYjcWHkAQz7xntmugEAAAAAAAAA0AcAAAAAAAA=")
+        let mintNftData = Array(base64: "AAJDxFrZ9Qa11eJEXtXYUGEZ5+CNeAttYXJrZXRwbGFjZQ9taW50X25mdHNfb3duZXIBBwAAAAAAAAAAAAAAAAAAAAAAAAACA3N1aQNTVUkAAQEB868ZfJRic55JEJJRbA7u+ek6Q1oTAQAAAAAAAAFgTRCPvmwCBXeOHD7t9UsXrbaBDRsUOoiuhd5QKfW6hYDm6eNEUx3joBMAAAAAAAAgOXZCOjr3CGg8RWxNPQgxpb12pFPSG1060vkeRBeblZBgTRCPvmwCBXeOHD7t9UsXrbaBDQEAAAAAAAAAiBMAAAAAAAA=")
         print(Data(mintNftData).toHexString())
         var reader = BinaryReader(bytes: mintNftData)
         let mintTransaction = try SuiTransactionData(from: &reader)
