@@ -11,7 +11,7 @@ import PromiseKit
 public struct SuiPublishTransaction: SuiUnserializedSignableTransaction{
     public enum CompiledModules{
         case Array([String])
-        case Arrayx([[UInt64]])
+        case Arrayx([[UInt8]])
     }
     public var compiledModules: CompiledModules
     public var gasPayment: SuiObjectId?
