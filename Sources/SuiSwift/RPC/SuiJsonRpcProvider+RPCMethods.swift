@@ -61,13 +61,13 @@ extension SuiJsonRpcProvider{
        * Convenience method for getting all coins objects owned by an address
        * @param typeArg optional argument for filter by coin type, e.g., '0x2::sui::SUI'
     */
-    public func getCoinBalancesOwnedByAddress(address: String, typeArg: String? = SUI_TYPE_ARG) -> Promise<[SuiGetObjectDataResponse]>{
+    public func getCoinBalancesOwnedByAddress(address: String, typeArg: String) -> Promise<[SuiGetObjectDataResponse]>{
         return Promise { seal in
             DispatchQueue.global().async(.promise){
                 try self.getObjectsOwnedByAddress(address: address).wait()
             }.then { (infos) -> Promise<[SuiGetObjectDataResponse]> in
                 let objects = infos.filter { info in
-                    SuiCoin.isCoin(data: info) && (typeArg == nil || typeArg == SuiCoin.getCoinTypeArg(data: info))
+                    SuiCoin.isCoin(data: info) && (typeArg == SuiCoin.getCoinTypeArg(data: info))
                 }
                 let coinIds = objects.map{$0.objectId}
                 return  self.getObjectBatch(objectIds: coinIds.map{$0.value})

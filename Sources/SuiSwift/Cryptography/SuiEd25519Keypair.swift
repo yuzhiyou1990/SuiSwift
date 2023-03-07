@@ -18,12 +18,22 @@ public struct SuiEd25519Keypair: SuiKeypair{
         let pubKey = try NaclSign.KeyPair.keyPair(fromSecretKey: secretKey).publicKey
         self.publicData = pubKey
     }
-    public init(seed: Data, path: String) throws {
+    public init(key: Data) throws {
+        if key.count > 32{
+            try self.init(secretKey: key)
+        } else{
+            try self.init(seed: key)
+        }
+    }
+    public init(seed: Data, path: String = "") throws {
         let newSeed = NaclSign.KeyPair.deriveKey(path: path, seed: seed).key
-        guard newSeed.count == 32 else {
+        try self.init(seed: newSeed)
+    }
+    public init(seed: Data) throws{
+        guard seed.count == 32 else {
             throw SuiError.KeypairError.InvalidSeed
         }
-        let keyPair = try NaclSign.KeyPair.keyPair(fromSeed: newSeed)
+        let keyPair = try NaclSign.KeyPair.keyPair(fromSeed: seed)
         try self.init(secretKey: keyPair.secretKey)
     }
     

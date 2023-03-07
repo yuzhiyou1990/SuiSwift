@@ -16,6 +16,7 @@ public protocol SuiKeypair{
     init(mnemonics: String, derivationPath: SuiDerivationPath) throws
     init(mnemonics: String, path: String) throws
     init(secretKey: Data) throws
+    init(key: Data) throws
     func getPublicKey() throws -> any SuiPublicKey
     func signData(message: Data) throws -> Data
     func getKeyScheme() -> SuiSignatureScheme
