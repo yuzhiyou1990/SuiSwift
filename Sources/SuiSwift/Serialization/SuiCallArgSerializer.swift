@@ -109,7 +109,15 @@ public class SuiCallArgSerializer{
                 if structVal != nil{
                     // argVal: objectId
                     guard let value = argVal.value() as? String else{
-                        seal.reject(SuiError.DataSerializerError.ParseError("\(SuiCallArgSerializer.MOVE_CALL_SER_ERROR) expect the argument to be an object id string, got {\(argVal.value()) null 2}"))
+                        seal.reject(SuiError.DataSerializerError.ParseError("\(SuiCallArgSerializer.MOVE_CALL_SER_ERROR) expect the argument to be an object id string, got \(argVal.value())"))
+                        return
+                    }
+                    seal.fulfill(.Object(try newObjectArg(objectId: value).wait()))
+                    return
+                }
+                if case .MoveNormalizedTypeParameterType(_) = expectedType {
+                    guard let value = argVal.value() as? String else{
+                        seal.reject(SuiError.DataSerializerError.ParseError("\(SuiCallArgSerializer.MOVE_CALL_SER_ERROR) expect the typeParameter to be an object id string, got \(argVal.value())"))
                         return
                     }
                     seal.fulfill(.Object(try newObjectArg(objectId: value).wait()))
