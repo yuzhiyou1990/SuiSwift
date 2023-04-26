@@ -2,10 +2,11 @@
 //  BorshDeserializable.swift
 //  
 //
-//  Created by mathwallet on 2022/7/14.
+//  Created by li shuai on 2022/12/20.
 //
 
 import Foundation
+import Base58Swift
 
 public protocol BorshDeserializable {
     init(from reader: inout BinaryReader) throws
@@ -83,11 +84,10 @@ extension ASCIIString: BorshDeserializable {
         self = .init(value: value)
     }
 }
-
 extension SuiAddress: BorshDeserializable {
     public init(from reader: inout BinaryReader) throws {
-        let bytes = reader.read(count: 20)
-        let value = Data(bytes: bytes, count: 20).toHexString()
+        let bytes = reader.read(count: UInt32(SuiAddress.ADDRESS_SIZE / 2))
+        let value = Data(bytes: bytes, count: SuiAddress.ADDRESS_SIZE / 2).toHexString()
         self = try .init(value: value.addHexPrefix())
     }
 }
@@ -97,6 +97,15 @@ extension Base64String: BorshDeserializable{
         let count: UInt32 = try UVarInt.init(from: &reader).value
         let bytes = reader.read(count: count)
         let value = Data(bytes: bytes, count: Int(count)).base64EncodedString()
+        self = .init(value: value)
+    }
+}
+
+extension Base58String: BorshDeserializable{
+    public init(from reader: inout BinaryReader) throws {
+        let count: UInt32 = try UVarInt.init(from: &reader).value
+        let bytes = reader.read(count: count)
+        let value = Base58.base58FromBytes(bytes)
         self = .init(value: value)
     }
 }
@@ -114,10 +123,3 @@ extension Set: BorshDeserializable where Element: BorshDeserializable & Equatabl
     }
 }
 
-extension Dictionary: BorshDeserializable where Key: BorshDeserializable & Equatable, Value: BorshDeserializable {
-    public init(from reader: inout BinaryReader) throws {
-        let count: UInt32 = try UVarInt.init(from: &reader).value
-        let keyValuePairs = try Array<UInt32>(0..<count).map {_ in (try Key.init(from: &reader), try Value.init(from: &reader)) }
-        self = Dictionary(uniqueKeysWithValues: keyValuePairs)
-    }
-}

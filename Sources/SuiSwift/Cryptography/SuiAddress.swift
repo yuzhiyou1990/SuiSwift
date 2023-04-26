@@ -1,23 +1,35 @@
 //
-//  File.swift
+//  SuiAddress.swift
 //  
 //
-//  Created by li shuai on 2022/10/26.
+//  Created by li shuai on 2022/12/20.
 //
 
 import Foundation
 import CryptoSwift
-
+//0x0b747f5e46ba9050e3fa071b6388c94df3b0d98b9ee642a42207222fb779319f
 public struct SuiAddress: Codable{
     public var value: String
     public var publicKeyHash: Data
-    public static let ADDRESS_SIZE = 40
+    public static let ADDRESS_SIZE = 64
     public static var DATASIZE: Int{
         return SuiAddress.ADDRESS_SIZE / 2
     }
     public init(value: String) throws{
+        guard value.stripHexPrefix().count == SuiAddress.ADDRESS_SIZE else{
+            throw SuiError.KeypairError.InvalidAddress
+        }
         self.value = value
         self.publicKeyHash = Data(hex: value.stripHexPrefix())
+    }
+    
+    public static func normalizeSuiAddress(address: String) -> String{
+        if  address.stripHexPrefix().count != ADDRESS_SIZE{
+            let padding_address = String(format: "%064X", Int(address.stripHexPrefix(), radix: 16)!)
+            let address = padding_address.lowercased()
+            return address
+        }
+        return address.lowercased()
     }
 }
 
@@ -25,9 +37,15 @@ extension SuiAddress{
     public init(from decoder: Decoder) throws {
         let container = try decoder.singleValueContainer()
         if let str = try? container.decode(String.self) {
-            self = try SuiAddress(value: str)
+            self = try SuiAddress(value: SuiAddress.normalizeSuiAddress(address: str))
             return
         }
         throw SuiError.RPCError.DecodingError("SuiAddress Decoder Error")
+    }
+}
+
+extension SuiAddress: Equatable{
+    public static func == (lhs: SuiAddress, rhs: SuiAddress) -> Bool {
+        return lhs.value.stripHexPrefix().uppercased() == rhs.value.stripHexPrefix().uppercased()
     }
 }

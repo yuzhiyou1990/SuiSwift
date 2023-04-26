@@ -2,7 +2,7 @@
 //  Borsh.swift
 //  
 //
-//  Created by mathwallet on 2022/7/14.
+//  Created by li shuai on 2022/12/20.
 //
 
 import Foundation
@@ -24,6 +24,13 @@ public struct VarData {
 }
 
 public struct Base64String{
+    public let value: String
+    public init(value: String) {
+        self.value = value
+    }
+}
+
+public struct Base58String{
     public let value: String
     public init(value: String) {
         self.value = value

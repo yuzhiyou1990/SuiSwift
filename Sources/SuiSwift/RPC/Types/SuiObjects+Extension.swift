@@ -1,24 +1,47 @@
 //
-//  File.swift
+//  SuiObjects+Extension.swift
 //  
 //
-//  Created by li shuai on 2022/11/4.
+//  Created by li shuai on 2022/12/20.
 //
 
 import Foundation
+import Base58Swift
 
-extension SuiRpcApiVersion{
-    public static func parseVersionFromString(version: String) -> SuiRpcApiVersion? {
-        let numbers = version.split(separator: ".")
-        guard let major = Int(numbers[0]),
-              let minor = Int(numbers[1]),
-              let patch = Int(numbers[2]) else{
-            return nil
+extension SuiObjectRef{
+    enum CodingKeys: String, CodingKey {
+        case digest
+        case objectId
+        case version
+    }
+    public init(from decoder: Decoder) throws {
+        let container =  try decoder.container(keyedBy: CodingKeys.self)
+        self.digest = try container.decode(SuiTransactionDigest.self, forKey: .digest)
+        self.objectId = try container.decode(SuiAddress.self, forKey: .objectId)
+        if let _version = try? container.decode(String.self, forKey: .version){
+            self.version = UInt64(_version) ?? 0
+        } else {
+            self.version = try container.decode(UInt64.self, forKey: .version)
         }
-        return SuiRpcApiVersion(major: major, minor: minor, patch: patch)
     }
 }
 
+extension Base58String: Decodable{
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        if let str = try? container.decode(String.self) {
+            self = Base58String(value: str)
+            return
+        }
+        throw SuiError.RPCError.DecodingError("Base58String Decoder Error")
+    }
+}
+extension Base64String: Encodable{
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(self.value)
+    }
+}
 extension Base64String: Decodable{
     public init(from decoder: Decoder) throws {
         let container = try decoder.singleValueContainer()
@@ -74,109 +97,6 @@ extension SuiObject{
         switch data.dataObject{
         case .MovePackage(_), .ParseError(_): return "0"
         case .MoveObject(let moveObject): return moveObject.getBalance()
-        }
-    }
-}
-
-extension SuiObjectOwner{
-    
-    enum CodingKeys: String, CodingKey {
-        case AddressOwner
-        case ObjectOwner
-        case SingleOwner
-        case Immutable
-        case Shared
-        case Unknow
-    }
-    public init(from decoder: Decoder) throws {
-        if  let container = try? decoder.container(keyedBy: CodingKeys.self){
-            if let value = try? container.decode(SuiAddress.self, forKey: .AddressOwner){
-                self = .AddressOwner(value)
-                return
-            }
-            if let value = try? container.decode(SuiAddress.self, forKey: .ObjectOwner){
-                self = .ObjectOwner(value)
-                return
-            }
-            if let value = try? container.decode(SuiAddress.self, forKey: .SingleOwner){
-                self = .SingleOwner(value)
-                return
-            }
-            if let value = try? container.decode(SuiObjectOwner.SuiShared.self, forKey: .Shared){
-                self = .Shared(value)
-                return
-            }
-        }
-        if let singleContainer = try? decoder.singleValueContainer(){
-            if let name = try? singleContainer.decode(String.self) {
-                self = .Immutable(name)
-                return
-            }
-        }
-        self = .Unknow(SuiError.RPCError.DecodingError("SuiObjectOwner Parse Error"))
-    }
-}
-
-extension SuiGetObjectDataResponse{
-    public enum CodingKeys: CodingKey {
-        case status
-        case details
-    }
-    
-    public enum Status: String{
-        case Exists
-        case Deleted
-        case NotExists
-    }
-    public init(from decoder: Decoder) throws {
-        let container = try decoder.container(keyedBy: CodingKeys.self)
-        self.status = try container.decode(SuiObjectStatus.self, forKey: .status)
-        if let suiObject = try? container.decode(SuiObject.self, forKey: .details) {
-            self.details = SuiGetObjectDetails.SuiObject(suiObject)
-            return
-        }
-        if let objectId = try? container.decode(SuiObjectId.self, forKey: .details) {
-            self.details = SuiGetObjectDetails.ObjectId(objectId)
-            return
-        }
-        if let suiObjectRef = try? container.decode(SuiObjectRef.self, forKey: .details) {
-            self.details = SuiGetObjectDetails.SuiObjectRef(suiObjectRef)
-            return
-        }
-        throw SuiError.RPCError.DecodingError("Decode SuiGetObjectDataResponse Error")
-    }
-    
-    // https://github.com/MystenLabs/sui/blob/45293b6ffaf96d778719caba4f1f3319786991e8/sdk/typescript/src/types/objects.ts
-    public func getObjectReference() -> SuiObjectRef?{
-        switch status {
-        case .Exists:
-            guard case let .SuiObject( suiObject) = details else{
-                return nil
-            }
-            return suiObject.reference
-        case .Deleted:
-            guard case let .SuiObjectRef(suiObjectRef) = details else {
-                return nil
-            }
-            return suiObjectRef
-        case .NotExists:
-            return nil
-        }
-    }
-    public func getSharedObjectInitialVersion() -> Int?{
-        switch status {
-        case .Exists:
-            guard case let .SuiObject( suiObject) = details else{
-                return nil
-            }
-            switch suiObject.owner{
-            case .Shared(let shared):
-                return shared.initial_shared_version
-            default:
-                return nil
-            }
-        case .Deleted: return nil
-        case .NotExists: return nil
         }
     }
 }

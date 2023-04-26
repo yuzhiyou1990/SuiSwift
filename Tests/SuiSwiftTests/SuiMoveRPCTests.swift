@@ -1,12 +1,4 @@
-//
-//  SuiMoveCallTests.swift
-//  
-//
-//  Created by li shuai on 2022/11/30.
-//
-
 import XCTest
-import CryptoSwift
 @testable import SuiSwift
 
 final class SuiMoveCallTests: XCTestCase {

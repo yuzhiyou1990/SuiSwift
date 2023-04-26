@@ -1,20 +1,12 @@
 //
-//  File.swift
+//  SuiMoveModels.swift
 //  
 //
-//  Created by li shuai on 2022/12/5.
+//  Created by li shuai on 2022/12/20.
 //
 
 import Foundation
 // move call
-
-public indirect enum SuiTypeArgument{
-    case Utf8string(String?)
-    case String(String?)
-    case TypeTag(SuiTypeTag, SuiJsonValue?)
-    case Address(String?)
-    case Vector(SuiTypeArgument?)
-}
 public enum SuiMoveFunctionArgType: Decodable{
     public struct ArgTypeObject: Decodable{
         public var object: String
@@ -30,30 +22,34 @@ public typealias SuiMoveFunctionArgTypes = [SuiMoveFunctionArgType]
 public typealias SuiMoveNormalizedModules = [String: SuiMoveNormalizedModule]
 
 public struct SuiMoveNormalizedModule: Decodable{
-    public var file_format_version: Int
+    public var fileFormatVersion: Int
     public var address: String
     public var name: String
     public var friends: [SuiMoveModuleId]
     public var structs: [String: SuiMoveNormalizedStruct]
-    public var exposed_functions: [String: SuiMoveNormalizedFunction]?
+    public var exposedFunctions: [String: SuiMoveNormalizedFunction]?
 }
 public struct SuiMoveAbilitySet: Decodable{
     public var abilities: [String]
 }
 public struct SuiMoveNormalizedStruct: Decodable{
     public var abilities: SuiMoveAbilitySet
-    public var type_parameters: [SuiMoveStructTypeParameter]
+    public var typeParameters: [SuiMoveStructTypeParameter]
     public var fields: [SuiMoveNormalizedField]
 }
 
 public struct SuiMoveStructTypeParameter: Decodable{
     public var constraints: SuiMoveAbilitySet
-    public var is_phantom: Bool
+    public var isPhantom: Bool
 }
 
 public struct SuiMoveNormalizedField: Decodable{
     public var name: String
     public var type_: SuiMoveNormalizedType
+    enum CodingKeys: String, CodingKey {
+        case name
+        case type_ = "type"
+    }
 }
 public struct SuiMoveModuleId: Decodable{
     public var address: String
@@ -70,7 +66,7 @@ public struct SuiStructType: Decodable{
     public var address: String
     public var module: String
     public var name: String
-    public var type_arguments: [SuiMoveNormalizedType]
+    public var typeArguments: [SuiMoveNormalizedType]
 }
 
 public struct SuiMoveNormalizedStructType: Decodable{
@@ -97,16 +93,20 @@ public struct SuiMoveNormalizedTypeVector: Decodable{
     enum CodingKeys: String, CodingKey {
         case vector = "Vector"
     }
-    public init(vector: SuiMoveNormalizedType) {
-        self.vector = vector
-    }
 }
 public struct SuiMoveNormalizedFunction: Decodable{
     public var visibility: SuiMoveVisibility
-    public var is_entry: Bool
-    public var type_parameters: [SuiMoveAbilitySet]
+    public var isEntry: Bool
+    public var typeParameters: [SuiMoveAbilitySet]
     public var parameters: [SuiMoveNormalizedType]
     public var return_: [SuiMoveNormalizedType]
+    enum CodingKeys: String, CodingKey {
+        case visibility
+        case isEntry
+        case typeParameters
+        case parameters
+        case return_ = "return"
+    }
 }
 public enum SuiMoveVisibility: String, Decodable{
     case Private
@@ -121,4 +121,16 @@ public indirect enum SuiMoveNormalizedType: Decodable{
     case MutableReference(SuiMoveNormalizedTypeMutableReference)
     case Vector(SuiMoveNormalizedTypeVector)
     case MoveNormalizedStructType(SuiMoveNormalizedStructType)
+}
+extension SuiMoveNormalizedType{
+    public static func isTxContext(param: SuiMoveNormalizedType) -> Bool{
+        let structType = param.extractStructTag()?.structType
+        guard case .MutableReference(_) = param,
+              structType?.address == "0x2",
+              structType?.module == "tx_context",
+              structType?.name == "TxContext" else{
+            return false
+        }
+        return true
+    }
 }
