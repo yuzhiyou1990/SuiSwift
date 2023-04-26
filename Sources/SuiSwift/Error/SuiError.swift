@@ -1,8 +1,8 @@
 //
-//  File.swift
+//  SuiError.swift
 //  
 //
-//  Created by li shuai on 2022/10/26.
+//  Created by li shuai on 2022/12/20.
 //
 
 import Foundation
@@ -22,7 +22,6 @@ public class SuiError{
     public enum KeypairError: LocalizedError{
         case NotExpected
         case SignError
-        case InvalidSignatureScheme
         case InvalidSeed
         case InvalidSecretKey
         case InvalidMnemonics
@@ -35,8 +34,6 @@ public class SuiError{
                 return "Not Expected"
             case .SignError:
                 return "Sign Error"
-            case .InvalidSignatureScheme:
-                return "Invalid signType"
             case .InvalidSeed:
                 return "Invalid Seed"
             case .InvalidSecretKey:

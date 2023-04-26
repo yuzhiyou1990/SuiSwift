@@ -1,8 +1,8 @@
 //
-//  File.swift
+//  SuiEd25519Keypair.swift
 //  
 //
-//  Created by li shuai on 2022/10/26.
+// Created by li shuai on 2022/12/20.
 //
 
 import Foundation
@@ -12,7 +12,6 @@ import BIP39swift
 public struct SuiEd25519Keypair: SuiKeypair{
     public var secretKey: Data
     public var publicData: Data
-    
     public init(secretKey: Data) throws{
         self.secretKey = secretKey
         let pubKey = try NaclSign.KeyPair.keyPair(fromSecretKey: secretKey).publicKey
@@ -26,7 +25,10 @@ public struct SuiEd25519Keypair: SuiKeypair{
         }
     }
     public init(seed: Data, path: String = "") throws {
-        let newSeed = NaclSign.KeyPair.deriveKey(path: path, seed: seed).key
+        let masterKeyData = seed.hmacSHA512(key: "ed25519 seed".data(using: .utf8)!)
+        let key = masterKeyData.subdata(in:0..<32)
+        let chainCode = masterKeyData.subdata(in:32..<64)
+        let newSeed = SuiEd25519Keypair.deriveKey(path: path, key: key, chainCode: chainCode).key
         try self.init(seed: newSeed)
     }
     public init(seed: Data) throws{
@@ -65,3 +67,5 @@ public struct SuiEd25519Keypair: SuiKeypair{
         return .ED25519
     }
 }
+
+

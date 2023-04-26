@@ -1,18 +1,17 @@
 //
-//  File.swift
-//  
+//  SuiEd25519PublicKey.swift
 //
-//  Created by li shuai on 2022/10/26.
+//
+//  Created by li shuai on 2023/01/04.
 //
 
 import Foundation
 import CryptoSwift
-import BIP39swift
 import Secp256k1Swift
 import BIP32Swift
+import BIP39swift
 
 public struct SuiSecp256k1Keypair: SuiKeypair{
-    
     public var secretKey: Data
     public var publicData: Data
     
@@ -61,7 +60,7 @@ public struct SuiSecp256k1Keypair: SuiKeypair{
         guard let base64Tx = message.encodeBase64Str() else{
             throw SuiError.KeypairError.SignError
         }
-        let signedData = SECP256K1.signForRecovery(hash: Data(Array(base64: base64Tx)).sha256(), privateKey: secretKey, useExtraVer: false)
+        let signedData = SECP256K1.signForRecovery(hash: Data(Array(base64: base64Tx)).sha256(), privateKey: secretKey)
         guard let signData = signedData.serializedSignature else {
             throw SuiError.KeypairError.SignError
         }

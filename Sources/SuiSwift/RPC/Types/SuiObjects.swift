@@ -1,31 +1,12 @@
 //
-//  File.swift
+//  SuiObjects.swift
 //  
 //
-//  Created by li shuai on 2022/11/1.
+//  Created by li shuai on 2022/12/20.
 //
 
 import Foundation
 import AnyCodable
-
-public typealias SuiObjectId = String
-public struct SuiRpcApiVersion{
-    public var major: Int
-    public var minor: Int
-    public var patch: Int
-}
-
-public enum SuiObjectOwner: Decodable{
-    public struct SuiShared: Decodable{
-        public var initial_shared_version: Int
-    }
-    case AddressOwner(SuiAddress)
-    case ObjectOwner(SuiAddress)
-    case SingleOwner(SuiAddress)
-    case Immutable(String)
-    case Shared(SuiShared)
-    case Unknow(Error)
-}
 
 public struct SuiObjectInfo: Decodable{
     public var objectId: SuiAddress
@@ -33,6 +14,7 @@ public struct SuiObjectInfo: Decodable{
     public var digest: SuiTransactionDigest
     public var type: String
     public var owner: SuiObjectOwner
+    public var previousTransaction: String
 }
 
 public enum SuiObjectStatus: String, Decodable{
@@ -40,18 +22,15 @@ public enum SuiObjectStatus: String, Decodable{
     case NotExists
     case Deleted
 }
-
-public typealias SuiTransactionDigest = Base64String
-
 public struct SuiObjectRef: Decodable{
-    /** Base64 string representing the object digest */
+    /** Base58 string representing the object digest */
     public var digest: SuiTransactionDigest
     /** Hex code as string representing the object id */
     public var objectId: SuiAddress
     /** Object version */
     public var version: UInt64
     public init(digest: String, objectId: String, version: UInt64) {
-        self.digest = Base64String(value: digest)
+        self.digest = Base58String(value: digest)
         self.objectId = try! SuiAddress(value: objectId)
         self.version = version
     }
@@ -94,12 +73,8 @@ public enum SuiGetObjectDetails: Decodable{
     case SuiObjectRef(SuiObjectRef)
 }
 
-public struct SuiGetObjectDataResponse: Decodable{
-    public var status: SuiObjectStatus
-    public var details: SuiGetObjectDetails
-}
-
 public struct SuiMoveObject: Decodable{
+    
     /** Move type (e.g., "0x2::coin::Coin<0x2::sui::SUI>") */
     public var type: String
     /** Fields and values stored inside the Move object */

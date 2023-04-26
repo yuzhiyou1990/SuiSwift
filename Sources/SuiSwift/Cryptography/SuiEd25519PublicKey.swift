@@ -1,11 +1,12 @@
 //
-//  File.swift
+//  SuiEd25519PublicKey.swift
 //  
 //
-//  Created by li shuai on 2022/10/26.
+//  Created by li shuai on 2022/12/20.
 //
 
 import Foundation
+import Blake2
 import CryptoSwift
 
 public struct SuiEd25519PublicKey: SuiPublicKey{
@@ -24,7 +25,8 @@ public struct SuiEd25519PublicKey: SuiPublicKey{
         var tmp = [UInt8]()
         tmp.append(SuiSignatureScheme.ED25519.rawValue)
         publicKey.forEach{tmp.append($0)}
-        let address = Data(tmp).sha3(.sha256)[0..<20].toHexString()
+        let hash = try Blake2.hash(.b2b, size: 32, bytes: tmp)[0..<32]
+        let address = hash.toHexString()
         return try SuiAddress(value: address.addHexPrefix())
     }
 }

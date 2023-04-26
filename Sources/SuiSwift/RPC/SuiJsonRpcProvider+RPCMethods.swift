@@ -1,158 +1,181 @@
 //
-//  File.swift
+//  SuiJsonRpcProvider+RPCMethods.swift
 //  
 //
-//  Created by li shuai on 2022/11/2.
+//  Created by li shuai on 2022/12/20.
 //
 
 import Foundation
 import PromiseKit
 import BigInt
-import AnyCodable
 
 extension SuiJsonRpcProvider{
     public enum RPCMethod: String, Encodable{
-        case GetObjectsOwnedByAddress = "sui_getObjectsOwnedByAddress"
         case GetObject = "sui_getObject"
         case RpcApiVersion = "rpc.discover"
-        case GetSuiSystemState = "sui_getSuiSystemState"
-        case GetReferenceGasPrice = "sui_getReferenceGasPrice"
-        case GetAllBalances = "sui_getAllBalances"
-        case GetBalance = "sui_getBalance"
-        
-        // version?.minor < 18
-        case ExecuteTransaction = "sui_executeTransaction"
-        // 0.19.0
-        case ExecuteTransactionSerializedSig = "sui_executeTransactionSerializedSig"
-        case DryRunTransaction = "sui_dryRunTransaction"
         case GetMoveFunctionArgTypes = "sui_getMoveFunctionArgTypes"
         case GetNormalizedMoveModulesByPackage = "sui_getNormalizedMoveModulesByPackage"
         case GetNormalizedMoveModule = "sui_getNormalizedMoveModule"
         case GetNormalizedMoveFunction = "sui_getNormalizedMoveFunction"
         case GetNormalizedMoveStruct = "sui_getNormalizedMoveStruct"
+        case GetCoins = "suix_getCoins"
+        case GetAllCoins = "suix_getAllCoins"
+        case GetBalance = "suix_getBalance"
+        case GetAllBalances = "suix_getAllBalances"
+        case GetCoinMetadata = "suix_getCoinMetadata"
+        case GetOwnedObjects = "suix_getOwnedObjects"
+        case MultiGetObjects = "sui_multiGetObjects"
+        case ExecuteTransactionBlock = "sui_executeTransactionBlock"
+        case GetTotalTransactionBlocks = "sui_getTotalTransactionBlocks"
+        case GetReferenceGasPrice = "suix_getReferenceGasPrice"
+        case GetStakes = "suix_getStakes"
+        case GetStakesByIds = "suix_getStakesByIds"
+        case GetLatestSuiSystemState = "suix_getLatestSuiSystemState"
+        case DryRunTransactionBlock = "sui_dryRunTransactionBlock"
+        case GetLatestCheckpointSequenceNumber = "sui_getLatestCheckpointSequenceNumber"
     }
     
-    public func getSuiSystemState() -> Promise<SuiSystemState> {
-        return  self.sendRequest(method: .GetSuiSystemState, params: try! JSONSerialization.data(withJSONObject: [], options: []))
-    }
-    
-    public func getReferenceGasPrice() -> Promise<UInt64> {
-        return  self.sendRequest(method: .GetReferenceGasPrice, params: try! JSONSerialization.data(withJSONObject: [], options: []))
-    }
-    
-    public func getAllBalances(owner: String) -> Promise<[SuiCoinBalance]>{
-        return  self.sendRequest(method: .GetBalance, params: [owner])
-    }
-    
-    public func getBalance(owner: String, coin_type: String) -> Promise<SuiCoinBalance>{
-        return  self.sendRequest(method: .GetBalance, params: [owner, coin_type])
-    }
     /**
-       * Returns the estimated gas cost for the transaction
-       * @param tx The transaction to estimate the gas cost. When string it is assumed it's a serialized tx in base64
-       * @returns total gas cost estimation
-       * @throws whens fails to estimate the gas cost
+       * Get all Coin<`coin_type`> objects owned by an address.
        */
-    public func getEffects(txnBytes: String) -> Promise<SuiTransactionEffects> {
-        return  self.sendRequest(method: .DryRunTransaction, params: [txnBytes])
+    
+    public func getCoins(model: SuiRequestCoins) -> Promise<SuiPaginatedCoins>{
+        return  self.sendRequest(method: .GetCoins, params: model)
     }
     
     /**
-       * Convenience method for getting all coins objects owned by an address
-       * @param typeArg optional argument for filter by coin type, e.g., '0x2::sui::SUI'
-    */
-    public func getCoinBalancesOwnedByAddress(address: String, typeArg: String = SUI_TYPE_ARG) -> Promise<[SuiGetObjectDataResponse]>{
+       * Get all Coin objects owned by an address.
+       */
+    public func getAllCoins(model: SuiRequestCoins) -> Promise<SuiPaginatedCoins>{
+        return  self.sendRequest(method: .GetAllCoins, params: model)
+    }
+    
+    /**
+       * Get the total coin balance for one coin type, owned by the address owner.
+       */
+    public func getBalance(model: SuiRequestBalance) -> Promise<SuiCoinBalance>{
+        return  self.sendRequest(method: .GetBalance, params: model)
+    }
+    
+    /**
+       * Get the total coin balance for all coin type, owned by the address owner.
+       */
+    
+    public func getAllBalance(model: SuiRequestBalance) -> Promise<[SuiCoinBalance]>{
+        return  self.sendRequest(method: .GetAllBalances, params: model)
+    }
+    
+    /**
+       * Fetch CoinMetadata for a given coin type
+       */
+    public func getCoinMetadata(coinType: String = SUI_TYPE_ARG) -> Promise<SuiCoinMetadata>{
+        return  self.sendRequest(method: .GetCoinMetadata, params: [coinType])
+    }
+    
+    public func getGasObjectsOwnedByAddress(address: String, coinType: String = SUI_TYPE_ARG, options: SuiObjectDataOptions = SuiObjectDataOptions(showType: true, showContent: true, showBcs: true, showOwner: true)) -> Promise<[SuiObjectResponse]>{
         return Promise { seal in
-            DispatchQueue.global().async(.promise){
-                try self.getObjectsOwnedByAddress(address: address).wait()
-            }.then { (infos) -> Promise<[SuiGetObjectDataResponse]> in
-                let objects = infos.filter { info in
-                    SuiCoin.isCoin(data: info) && (typeArg == SuiCoin.getCoinTypeArg(data: info))
-                }
-                let coinIds = objects.map{$0.objectId}
-                return  self.getObjectBatch(objectIds: coinIds.map{$0.value})
-            }.done { getObjectDataResponses in
-                seal.fulfill(getObjectDataResponses)
+            DispatchQueue.global().async(.promise) {
+                let coins = try self.getOwnedObjects(model: SuiGetOwnedObjects(owner: try SuiAddress(value: address), objectResponseQuery: SuiObjectResponseQuery(filter: nil, options: options))).wait()
+                seal.fulfill(coins.data.filter { response in
+                    SuiCoin.isSUI(data: response)
+                })
+                
             }.catch { error in
-                seal.reject(SuiError.RPCError.ApiResponseError(method: #function, message: "Error fetching \(error)"))
+                seal.reject(error)
             }
         }
     }
-    
-    // Objects
-      /**
+    /**
        * Get all objects owned by an address
        */
-    public func getObjectsOwnedByAddress(address: String) -> Promise<[SuiObjectInfo]>{
-        return  self.sendRequest(method: .GetObjectsOwnedByAddress, params: [address])
+    public func getOwnedObjects(model: SuiGetOwnedObjects) -> Promise<SuiPaginatedObjectsResponse>{
+        return  self.sendRequest(method: .GetOwnedObjects, params: model)
     }
+    
     
     /**
        * Get details about an object
        */
-    public func getObject(objectId: String) -> Promise<SuiGetObjectDataResponse>{
-        return  self.sendRequest(method: .GetObject, params: [objectId])
+    public func getObject(model: SuiGetObject) -> Promise<SuiObjectResponse>{
+        return  self.sendRequest(method: .GetObject, params: model)
     }
     
     /**
-      * Get object reference(id, tx digest, version id)
-      * @param objectId
-      */
-    public func getObjectRef(objectId: String) -> Promise<SuiObjectRef?>{
+       * Batch get details about a list of objects. If any of the object ids are duplicates the call will fail
+       */
+    public func multiGetObjects(model: SuiMultiGetObjects) -> Promise<[SuiObjectResponse]>{
+        return  self.sendRequest(method: .MultiGetObjects, params: model)
+    }
+    
+    public func executeTransactionBlock(model: SuiExecuteTransactionBlock) -> Promise<SuiTransactionBlockResponse>{
+        return  self.sendRequest(method: .ExecuteTransactionBlock, params: model)
+    }
+    
+    public func getLatestCheckpointSequenceNumber() -> Promise<String> {
         return Promise { seal in
-            DispatchQueue.global().async(.promise){ () -> SuiGetObjectDataResponse in
-                try self.getObject(objectId: objectId).wait()
-            }.done { objectData in
-                seal.fulfill(objectData.getObjectReference())
+            let params = "[]".data(using: .utf8)!
+            self.sendRequest(method: .GetLatestCheckpointSequenceNumber, params: params)
+                .done { seal.fulfill($0) }
+                .catch { seal.reject($0) }
+        }
+    }
+    /**
+       * Dry run a transaction block and return the result.
+       */
+    public func dryRunTransactionBlock(transactionBlock: Base64String) -> Promise<SuiDryRunTransactionBlockResponse>{
+        return  self.sendRequest(method: .DryRunTransactionBlock, params: [transactionBlock.value])
+    }
+    
+    /**
+       * Get total number of transactions
+       */
+    public func getTotalTransactionBlocks() -> Promise<BigUInt> {
+        return Promise { seal in
+            let data = "[]".data(using: .utf8)!
+            self.sendRequest(method: .GetTotalTransactionBlocks, params: data).done { (number: String) in
+                seal.fulfill(BigUInt(stringLiteral: number))
             }.catch { error in
-                seal.reject(SuiError.RPCError.ApiResponseError(method: #function, message: "Error fetching \(error)"))
+                seal.reject(error)
             }
         }
     }
-    public func getObjectBatch(objectIds: [String]) -> Promise<[SuiGetObjectDataResponse]>{
-        let params = objectIds.map{(RPCMethod.GetObject, [$0])}
-        return  self.sendBatchRequest(params: params)
-    }
-    // new version
-    public func executeExecuteTransactionSerializedSigWithRequestType(signedTransaction: SuiSignedTransaction, requestType: SuiExecuteTransactionRequestType = .WaitForLocalExecution) -> Promise<SuiExecuteTransactionResponse>{
-        var serialized_sig = [UInt8]()
-        serialized_sig.append(signedTransaction.signatureScheme.rawValue)
-        serialized_sig.append(contentsOf: Array(base64: signedTransaction.signature))
-        serialized_sig.append(contentsOf: Array(base64: signedTransaction.pubkey))
-        return self.sendRequest(method: .ExecuteTransactionSerializedSig, params: [signedTransaction.txnBytes, serialized_sig.toBase64(), requestType.rawValue])
-    }
-    
-    public func executeExecuteTransactionWithRequestType(signedTransaction: SuiSignedTransaction, requestType: SuiExecuteTransactionRequestType = .WaitForLocalExecution) -> Promise<AnyCodable>{
-        var serialized_sig = [UInt8]()
-        serialized_sig.append(signedTransaction.signatureScheme.rawValue)
-        serialized_sig.append(contentsOf: Array(base64: signedTransaction.signature))
-        serialized_sig.append(contentsOf: Array(base64: signedTransaction.pubkey))
-        return self.sendRequest(method: .ExecuteTransactionSerializedSig, params: [signedTransaction.txnBytes, serialized_sig.toBase64(), requestType.rawValue])
-    }
     
     /**
-       * This is under development endpoint on Fullnode that will eventually
-       * replace the other `executeTransaction` that's only available on the
-     * Gateway_
-    */
-    public func executeTransactionWithRequestType(txnBytes: String, signatureScheme: SuiSignatureScheme, signature: String, pubkey: String, requestType: SuiExecuteTransactionRequestType = .WaitForTxCert) -> Promise<SuiExecuteTransactionResponse> {
-        return self.sendRequest(method: .ExecuteTransaction, params: [txnBytes, signatureScheme.name(), signature, pubkey, requestType.rawValue])
-    }
-    
-    /**
-      * Convenience method for select coin objects that has a balance greater than or equal to `amount`
-      *
-      * @param amount coin balance
-      * @param typeArg coin type, e.g., '0x2::sui::SUI'
-      * @param exclude object ids of the coins to exclude
-      * @return a list of coin objects that has balance greater than `amount` in an ascending order
-    */
-    public func selectCoinsWithBalanceGreaterThanOrEqual(address: String, amount: BigInt, typeArg: String = SUI_TYPE_ARG, exclude: [SuiObjectId] = []) -> Promise<[SuiGetObjectDataResponse]>{
+       * Getting the reference gas price for the network
+       */
+    public func getReferenceGasPrice() -> Promise<BigUInt> {
         return Promise { seal in
-            DispatchQueue.global().async(.promise){ () -> [SuiGetObjectDataResponse] in
-                try self.getCoinBalancesOwnedByAddress(address: address, typeArg: typeArg).wait()
-            }.done { coins in
-                seal.fulfill(SuiCoin.selectCoinsWithBalanceGreaterThanOrEqual(coins: coins, amount: amount, exclude: exclude))
+            let data = "[]".data(using: .utf8)!
+            self.sendRequest(method: .GetReferenceGasPrice, params: data).done { (gasprice: String) in
+                seal.fulfill(BigUInt(stringLiteral: gasprice))
+            }.catch { error in
+                seal.reject(error)
+            }
+        }
+    }
+    
+    /**
+       * Return the delegated stakes for an address
+       */
+    public func getStakes(owner: SuiAddress) -> Promise<[SuiDelegatedStake]> {
+        return  self.sendRequest(method: .GetStakes, params: [owner.value])
+    }
+    
+    /**
+       * Return the delegated stakes queried by id.
+       */
+    public func getStakesByIds(stakedSuiIds: [SuiObjectId]) -> Promise<[SuiDelegatedStake]> {
+        return  self.sendRequest(method: .GetStakesByIds, params: [stakedSuiIds])
+    }
+    
+    /**
+       * Return the latest system state content.
+       */
+    public func getLatestSuiSystemState() -> Promise<SuiSystemStateSummary> {
+        return Promise { seal in
+            let data = "[]".data(using: .utf8)!
+            self.sendRequest(method: .GetLatestSuiSystemState, params: data).done { state in
+                seal.fulfill(state)
             }.catch { error in
                 seal.reject(error)
             }
@@ -217,6 +240,26 @@ extension SuiJsonRpcProvider{
                 seal.fulfill(`struct`)
             }.catch { error in
                 seal.reject(SuiError.RPCError.ApiResponseError(method: #function, message: "Error fetching function: \(error) for package \(packageId), module \(moduleName) and structName \(structName)"))
+            }
+        }
+    }
+    
+    public func getNormalizedMoveFunctionParams(target: String) -> Promise<[SuiMoveNormalizedType]> {
+        return Promise { seal in
+            DispatchQueue.global().async(.promise){
+                let words = target.components(separatedBy: "::")
+                guard words.count == 3 else{
+                    throw SuiError.BuildTransactionError.ConstructTransactionDataError("moveModulesToResolve target parse error")
+                }
+                let pkg = words[0]
+                let module = words[1]
+                let fun = words[2]
+                let normalized = try self.getNormalizedMoveFunction(packageId: pkg, moduleName: module, functionName: fun).wait()
+                let hasTxContext = normalized.parameters.count > 0 && SuiMoveNormalizedType.isTxContext(param: normalized.parameters.last!)
+                let params = hasTxContext ? Array(normalized.parameters[0..<(normalized.parameters.count - 1)]) : normalized.parameters
+                seal.fulfill(params)
+            }.catch { error in
+                seal.reject(error)
             }
         }
     }

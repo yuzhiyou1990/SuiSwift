@@ -2,15 +2,18 @@
 //  BorshSerialize.swift
 //  
 //
-//  Created by mathwallet on 2022/7/14.
+//  Created by li shuai on 2022/12/20.
 //
 
 import Foundation
 import CryptoSwift
+import Base58Swift
+import BigInt
 
 public protocol BorshSerializable {
     func serialize(to writer: inout Data) throws
 }
+
 
 extension UInt8: BorshSerializable {}
 extension UInt16: BorshSerializable {}
@@ -60,6 +63,13 @@ extension Bool: BorshSerializable {
     }
 }
 
+extension BigInt: BorshSerializable {
+    public func serialize(to writer: inout Data) throws {
+        let data = self.serialize()
+        writer.append(data)
+    }
+}
+
 extension String: BorshSerializable {
     public func serialize(to writer: inout Data) throws {
         let data = Data(utf8)
@@ -68,18 +78,27 @@ extension String: BorshSerializable {
     }
 }
 
+extension Base64String: BorshSerializable{
+    public func serialize(to writer: inout Data) throws {
+        let data = Data(Array(base64: value))
+        try UVarInt(data.count).serialize(to: &writer)
+        writer.append(data)
+    }
+}
+
+extension Base58String: BorshSerializable{
+    public func serialize(to writer: inout Data) throws {
+        let bytes =  Base58.bytesFromBase58(value)
+        let data = Data(bytes)
+        try UVarInt(data.count).serialize(to: &writer)
+        writer.append(data)
+    }
+}
 extension ASCIIString: BorshSerializable {
     public func serialize(to writer: inout Data) throws {
         guard let data = value.data(using: .ascii) else{
             throw SuiError.BCSError.SerializeError("Serialize ASCIIString Error")
         }
-        try UVarInt(data.count).serialize(to: &writer)
-        writer.append(data)
-    }
-}
-extension Base64String: BorshSerializable{
-    public func serialize(to writer: inout Data) throws {
-        let data = Data(Array(base64: value))
         try UVarInt(data.count).serialize(to: &writer)
         writer.append(data)
     }
@@ -108,16 +127,5 @@ extension Array: BorshSerializable where Element: BorshSerializable {
 extension Set: BorshSerializable where Element: BorshSerializable & Comparable {
     public func serialize(to writer: inout Data) throws {
         try sorted().serialize(to: &writer)
-    }
-}
-
-extension Dictionary: BorshSerializable where Key: BorshSerializable & Comparable, Value: BorshSerializable {
-    public func serialize(to writer: inout Data) throws {
-        let sortedByKeys = sorted(by: {$0.key < $1.key})
-        try UVarInt(sortedByKeys.count).serialize(to: &writer)
-        try sortedByKeys.forEach { key, value in
-            try key.serialize(to: &writer)
-            try value.serialize(to: &writer)
-        }
     }
 }

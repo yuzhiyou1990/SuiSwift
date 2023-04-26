@@ -1,8 +1,8 @@
 //
-//  File.swift
+//  SuiJsonRpcProvider.swift
 //  
 //
-//  Created by li shuai on 2022/11/1.
+//  Created by li shuai on 2022/12/20.
 //
 
 import Foundation
@@ -31,7 +31,7 @@ public class SuiJsonRpcProvider{
         public var result: Result
         public var id: String
     }
-    public init(url: URL = URL(string: "https://fullnode.devnet.sui.io")!) {
+    public init(url: URL = URL(string: "https://wallet-rpc.testnet.sui.io")!) {
         self.url = url
         self.session = URLSession(configuration: .default)
     }
@@ -77,6 +77,7 @@ public class SuiJsonRpcProvider{
             }
         }
     }
+    
     private func request(body: Data) -> Promise<Data>{
         let rp = Promise<Data>.pending()
         var task: URLSessionTask?
