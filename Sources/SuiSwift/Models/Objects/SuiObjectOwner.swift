@@ -2,11 +2,24 @@
 //  File.swift
 //  
 //
-//  Created by li shuai on 2023/4/4.
+//  Created by li shuai on 2023/4/27.
 //
 
 import Foundation
 
+public typealias SuiTransactionDigest = Base58String
+public typealias SuiObjectId = String
+
+public enum SuiObjectOwner: Decodable{
+    public struct SuiShared: Decodable{
+        public var initial_shared_version: Int
+    }
+    case AddressOwner(SuiAddress)
+    case ObjectOwner(SuiAddress)
+    case Immutable(String)
+    case Shared(SuiShared)
+    case Unknow(Error)
+}
 extension SuiObjectOwner{
     enum CodingKeys: String, CodingKey {
         case AddressOwner

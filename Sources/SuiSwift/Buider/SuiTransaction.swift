@@ -15,13 +15,13 @@ public struct SuiObjectsToResolve{
     public let normalizedType: SuiMoveNormalizedType?
 }
 
-public class TransactionBlock{
+public class SuiTransaction{
     public var sender: SuiAddress
     public var gasPrice: UInt64
     public var gasBudget: UInt64
     public var gasPayment: [SuiObjectRef]?
     public static let MAX_GAS_OBJECTS = 256
-    private var blockData: SuiTransactionBlockDataBuilder? = nil
+    private var blockData: SuiTransactionBuilder? = nil
     
     /** Returns an argument for the gas coin, to be used in a transaction. */
     public var gas: SuiTransactionArgumentType {
@@ -37,7 +37,7 @@ public class TransactionBlock{
         self.gasPrice = gasPrice
         self.gasBudget = gasBudget
         self.gasPayment = gasPayment
-        self.blockData = SuiTransactionBlockDataBuilder(sender: sender, gasConfig: SuiGasConfig(budget: "\(self.gasBudget)", price: "\(self.gasPrice)", payment: self.gasPayment, owner: self.sender))
+        self.blockData = SuiTransactionBuilder(sender: sender, gasConfig: SuiGasConfig(budget: "\(self.gasBudget)", price: "\(self.gasPrice)", payment: self.gasPayment, owner: self.sender))
     }
     /**
       * Add a new non-object input to the transaction.

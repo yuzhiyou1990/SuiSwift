@@ -6,7 +6,6 @@
 //
 
 import Foundation
-
 extension SuiEd25519Keypair{
     public static func deriveKey(path: String, key: Data, chainCode: Data) -> (key: Data, chainCode: Data) {
         let paths = path.components(separatedBy: "/")
