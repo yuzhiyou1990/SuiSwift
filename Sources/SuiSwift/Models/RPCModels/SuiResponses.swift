@@ -13,17 +13,6 @@ public struct SuiPaginatedCoins: Decodable{
     public let nextCursor: String
     public let hasNextPage: Bool
 }
-
-public struct SuiCoinStruct: Decodable{
-    public let coinType: String
-    public let coinObjectId: SuiAddress
-    public let version: SuiObjectVersion
-    public let digest: SuiTransactionDigest
-    public let balance: String
-    public let lockedUntilEpoch: UInt64?
-    public let previousTransaction: SuiTransactionDigest
-}
-
 public struct SuiCoinBalance: Decodable{
     public struct SuiLockedBalance: Decodable{
         public let epochId: UInt64?
@@ -82,55 +71,6 @@ public enum SuiRawData: Decodable{
     }
 }
 
-//public struct SuiRawMoveObject: Decodable{
-//    public let type: String
-//    public let hasPublicTransfer: Bool
-//    public let version: SuiObjectVersion
-//    public let bcsBytes: String
-//}
-
-public typealias SuiObjectDigest = String
-public struct SuiObjectData: Decodable{
-    public let objectId: String
-    public let version: SuiObjectVersion
-    public let digest: SuiObjectDigest
-    public let type: String?
-    public let content: SuiParsedData?
-    public let bcs: AnyCodable?
-    public let owner: SuiObjectOwner?
-    public let previousTransaction: SuiTransactionDigest?
-    public let storageRebate: String?
-    public let display: AnyCodable?
-}
-extension SuiObjectData{
-    public func getObjectReference() -> SuiObjectRef{
-        return SuiObjectRef(digest: digest, objectId: self.objectId, version: version.value())
-    }
-}
-public struct SuiObjectResponseError: Decodable{
-    public let tag: String
-    public let object_id: SuiObjectId?
-    public let version: UInt64?
-    public let digest: SuiObjectDigest?
-}
-public struct SuiObjectResponse: Decodable{
-    public let data: SuiObjectData?
-    public let error: SuiObjectResponseError?
-}
-
-extension SuiObjectResponse{
-    public func getSharedObjectInitialVersion() -> Int?{
-        if let objectData = self.data, let owner = objectData.owner {
-            if case .Shared(let shared) = owner{
-                return shared.initial_shared_version
-            }
-        }
-        return nil
-    }
-    public func getObjectReference() -> SuiObjectRef?{
-        return self.data?.getObjectReference()
-    }
-}
 
 public struct SuiCheckpointedObjectId: Decodable{
     public let objectId: SuiObjectId
@@ -306,4 +246,107 @@ public struct SuiSystemStateSummary: Decodable{
 
 public struct SuiDryRunTransactionBlockResponse: Decodable{
     public let effects: SuiTransactionEffects
+}
+
+// transaction
+public typealias EpochId = Int
+
+public typealias SuiAuthoritySignature = String
+public enum SuiGenericAuthoritySignature: Decodable{
+    case SuiAuthoritySignature(String)
+    case SuiAuthoritySignatures([String])
+    case Unknow(Error)
+}
+
+public struct SuiAuthorityQuorumSignInfo: Decodable{
+    public var epoch: EpochId
+    public var signature: SuiGenericAuthoritySignature
+}
+public struct SuiCertifiedTransaction: Decodable{
+    public var transactionDigest: SuiTransactionDigest
+    public var data: AnyCodable
+    public var txSignature: String
+    public var authSignInfo: SuiAuthorityQuorumSignInfo
+}
+
+public struct SuiExecutionStatus: Decodable{
+    public var status: String
+    public var error: String?
+}
+
+// https://github.com/MystenLabs/sui/blob/5e20e6569416525bef8101357adda8a9a3c66a63/sdk/typescript/src/types/transactions.ts
+public struct SuiGasCostSummary: Decodable{
+    public var computationCost: String
+    public var storageCost: String
+    public var storageRebate: String
+    public var nonRefundableStorageFee: String
+}
+
+public struct SuiOwnedObjectRef: Decodable{
+    public var owner: SuiObjectOwner
+    public var reference: SuiObjectRef
+}
+
+
+
+public struct SuiCertifiedTransactionEffects: Decodable{
+    public var effects: SuiTransactionEffects
+}
+public struct SuiEffectsCert: Decodable{
+    public var certificate: SuiCertifiedTransaction
+    public var effects: SuiCertifiedTransactionEffects
+}
+
+public struct SuiTxCert: Decodable{
+    public var certificate: SuiCertifiedTransaction
+}
+
+public struct SuiImmediateReturn: Decodable{
+    public var tx_digest: String
+}
+
+public enum SuiExecuteTransactionResponse: Decodable{
+    case ImmediateReturn(SuiImmediateReturn)
+    case TxCert(SuiTxCert)
+    case EffectsCert(SuiEffectsCert)
+    case Unknow(Error)
+}
+
+extension SuiGenericAuthoritySignature{
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        if let str = try? container.decode(String.self) {
+            self = .SuiAuthoritySignature(str)
+            return
+        }
+        if let strArray = try? container.decode([String].self) {
+            self = .SuiAuthoritySignatures(strArray)
+            return
+        }
+        self = .Unknow(SuiError.TransactionResponseError.DecodingError(modelName: "SuiGenericAuthoritySignature"))
+    }
+}
+
+extension SuiExecuteTransactionResponse{
+    enum CodingKeys: String, CodingKey {
+        case ImmediateReturn
+        case EffectsCert
+        case TxCert
+    }
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        if let immediateReturn = try? container.decode(SuiImmediateReturn.self, forKey: .ImmediateReturn){
+            self = .ImmediateReturn(immediateReturn)
+            return
+        }
+        if let effectsCert = try? container.decode(SuiEffectsCert.self, forKey: .EffectsCert){
+            self = .EffectsCert(effectsCert)
+            return
+        }
+        if let txCert = try? container.decode(SuiTxCert.self, forKey: .TxCert){
+            self = .TxCert(txCert)
+            return
+        }
+        self = .Unknow(SuiError.TransactionResponseError.DecodingError(modelName: "SuiExecuteTransactionResponse"))
+    }
 }

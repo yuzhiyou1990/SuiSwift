@@ -3,7 +3,7 @@ import XCTest
 
 final class SuiTransactionTests: XCTestCase {
     var client = SuiJsonRpcProvider()
-    var builder = TransactionBlock(sender: try! SuiAddress(value: "0x3acadaf248b19e99626d4a506423cf073d4355788e82de2b7e9ad98acf4d6d27"))
+    var builder = SuiTransaction(sender: try! SuiAddress(value: "0x3acadaf248b19e99626d4a506423cf073d4355788e82de2b7e9ad98acf4d6d27"))
     var keypair = try! SuiEd25519Keypair(key: Data(hex: "0x7cc70de1e5c454bfc43b71d6da2b3cee1260caa7a5daf508cc1cdb95380a61de"))
    
     func test_transafer() throws{

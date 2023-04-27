@@ -1,47 +1,33 @@
 //
-//  SuiMoveModels+Extension.swift
+//  File.swift
 //  
 //
-//  Created by li shuai on 2022/12/20.
+//  Created by li shuai on 2023/4/27.
 //
 
 import Foundation
 
-extension SuiStructType: Equatable{
-    public static func == (lhs: SuiStructType, rhs: SuiStructType) -> Bool {
-        return lhs.address == rhs.address && lhs.module == rhs.module && lhs.name == rhs.name
-    }
-    static var RESOLVED_SUI_ID: SuiStructType {
-        SuiStructType(address: SUI_FRAMEWORK_ADDRESS, module: OBJECT_MODULE_NAME, name: ID_STRUCT_NAME, typeArguments: [])
-    }
-    static var RESOLVED_ASCII_STR: SuiStructType {
-        SuiStructType(address: MOVE_STDLIB_ADDRESS, module: STD_ASCII_MODULE_NAME, name: STD_ASCII_STRUCT_NAME, typeArguments: [])
-    }
-    static var RESOLVED_UTF8_STR: SuiStructType {
-        SuiStructType(address: MOVE_STDLIB_ADDRESS, module: STD_UTF8_MODULE_NAME, name: STD_UTF8_STRUCT_NAME, typeArguments: [])
-    }
-    static var RESOLVED_STD_OPTION: SuiStructType {
-        SuiStructType(address: MOVE_STDLIB_ADDRESS, module: STD_OPTION_MODULE_NAME, name: STD_OPTION_STRUCT_NAME, typeArguments: [])
-    }
+public indirect enum SuiMoveNormalizedType: Decodable{
+    case Str(String)
+    case MoveNormalizedTypeParameterType(SuiMoveNormalizedTypeParameterType)
+    case Reference(SuiMoveNormalizedTypeReference)
+    case MutableReference(SuiMoveNormalizedTypeMutableReference)
+    case Vector(SuiMoveNormalizedTypeVector)
+    case MoveNormalizedStructType(SuiMoveNormalizedStructType)
 }
 
-// move call
-
-extension SuiMoveFunctionArgType{
-    public init(from decoder: Decoder) throws {
-        let container = try decoder.singleValueContainer()
-        if let str = try? container.decode(String.self) {
-            self = .Str(str)
-            return
+extension SuiMoveNormalizedType{
+    public static func isTxContext(param: SuiMoveNormalizedType) -> Bool{
+        let structType = param.extractStructTag()?.structType
+        guard case .MutableReference(_) = param,
+              structType?.address == "0x2",
+              structType?.module == "tx_context",
+              structType?.name == "TxContext" else{
+            return false
         }
-        if let argTypeObject = try? container.decode(ArgTypeObject.self) {
-            self = .Object(argTypeObject)
-            return
-        }
-        throw SuiError.RPCError.DecodingError("SuiMoveFunctionArgType Decoder Error")
+        return true
     }
 }
-
 extension SuiMoveNormalizedType{
     public init(from decoder: Decoder) throws {
         let container = try decoder.singleValueContainer()
