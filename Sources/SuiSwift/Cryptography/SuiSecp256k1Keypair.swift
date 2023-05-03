@@ -64,7 +64,7 @@ public struct SuiSecp256k1Keypair: SuiKeypair{
         guard let signData = signedData.serializedSignature else {
             throw SuiError.KeypairError.SignError
         }
-        return signData
+        return signData[0..<64]
     }
     
     public func getKeyScheme() -> SuiSignatureScheme {

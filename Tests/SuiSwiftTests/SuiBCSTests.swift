@@ -1,7 +1,16 @@
 import XCTest
+import BigInt
+
 @testable import SuiSwift
 
 final class SuiBCSTests: XCTestCase {
+    
+    func test_amount() throws{
+        let base64 = "AAACAAgAypo7AAAAAAAg1xxhpppIXi/UT1E1wBjOi6oehtvEYZmmmRNL9MmnFpUCAgABAQAAAQECAAABAQA6ytrySLGemWJtSlBkI88HPUNVeI6C3it+mtmKz01tJwEciCH16516T0ATrsNebS5Mi+h2cgdaCew4NFcZiE3ISWg25AAAAAAAICiwUpfCExvnSZPA8XQN1/OsXWdwSzzd8YOtnlvwaa2yOsra8kixnplibUpQZCPPBz1DVXiOgt4rfprZis9NbSfoAwAAAAAAABCQLQAAAAAAAA=="
+        var reader = BinaryReader(bytes: Array(base64: base64))
+        let tx = try SuiTransactionData(from: &reader)
+        print(tx)
+    }
     func test_bcsTransaction() throws {
         let transaction = SuiProgrammableTransaction(inputs: try inputs(), transactions: try transactions())
         let kind = SuiTransactionKind.ProgrammableTransaction(transaction)

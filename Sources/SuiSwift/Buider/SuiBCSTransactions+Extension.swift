@@ -195,13 +195,10 @@ extension SuiTransactionKind: BorshCodable{
             try suiProgrammableTransaction.serialize(to: &writer)
         case .ChangeEpoch:
             try UVarInt(1).serialize(to: &writer)
-            break
         case .Genesis:
             try UVarInt(2).serialize(to: &writer)
-            break
         case .ConsensusCommitPrologue:
             try UVarInt(3).serialize(to: &writer)
-            break
         }
     }
     
@@ -267,7 +264,7 @@ extension SuiProgrammableCallInner: BorshCodable{
         try function.serialize(to: &writer)
         if let typeArguments = typeArguments {
             try typeArguments.serialize(to: &writer)
-        }else{
+        } else{
             try UVarInt(0).serialize(to: &writer)
         }
         try arguments.serialize(to: &writer)
@@ -290,7 +287,8 @@ extension SuiProgrammableCallInner: BorshCodable{
 extension SuiMoveCallTransaction: BorshCodable{
 
     public func serialize(to writer: inout Data) throws {
-        let words = self.target.components(separatedBy: "::")
+        let target = self.target.replacingOccurrences(of: " ", with: "")
+        let words = target.components(separatedBy: "::")
         guard words.count == 3 else{
             throw SuiError.BCSError.SerializeError("SuiMoveCallTransaction Serialize Error")
         }

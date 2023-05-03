@@ -6,6 +6,8 @@
 //
 
 import Foundation
+import PromiseKit
+
 public class SuiTransactionBuilder{
     public var version: Int
     public var sender: SuiAddress?
@@ -33,11 +35,28 @@ public class SuiTransactionBuilder{
     }
 }
 extension SuiTransactionBuilder{
+    public static func ParseDAppTransaction(dic: [String: Any]) throws -> SuiTransactionBuilder{
+        guard let sender = dic["sender"] as? String,
+              let version = dic["version"] as? Int,
+              let inputs = dic["inputs"] as? [[String: Any]],
+              let transactions = dic["transactions"] as? [[String: Any]] else{
+            throw SuiError.BuildTransactionError.InvalidSerializeData
+        }
+        let blockInputs = try inputs.map { dic in
+            return try SuiTransactionBlockInput.input(dic: dic)
+        }
+        let blockTransactions = try transactions.map({ dic in
+            return try SuiTransactionInner.transactionType(dic: dic)
+        })
+        return SuiTransactionBuilder(version: version, sender: try SuiAddress(value: SuiAddress.normalizeSuiAddress(address: sender)), expiration: nil, inputs: blockInputs, transactions: blockTransactions)
+    }
+}
+extension SuiTransactionBuilder{
     func build() throws -> Data{
         guard let sender = self.sender else{
             throw SuiError.BuildTransactionError.ConstructTransactionDataError("Missing sender")
         }
-        guard let payments = self.gasConfig.payment, let price = self.gasConfig.price, let budget = self.gasConfig.budget else{
+        guard let price = self.gasConfig.price, let budget = self.gasConfig.budget else{
             throw SuiError.BuildTransactionError.ConstructTransactionDataError("Missing gasConfig")
         }
         guard let inputs = self.inputs else{
@@ -53,14 +72,73 @@ extension SuiTransactionBuilder{
             return callArg
         }
         let programmableTransaction = SuiProgrammableTransaction(inputs: values, transactions: transactions)
-        let transactionData = SuiTransactionData.V1(SuiTransactionDataV1(kind: .ProgrammableTransaction(programmableTransaction), sender: sender, gasData: SuiGasData(payment: payments, owner: gasConfig.owner ?? sender, price: UInt64(price)!, budget: UInt64(budget)!), expiration: self.expiration ?? .None))
+        let transactionData = SuiTransactionData.V1(SuiTransactionDataV1(kind: .ProgrammableTransaction(programmableTransaction), sender: sender, gasData: SuiGasData(payment: self.gasConfig.payment, owner: gasConfig.owner ?? sender, price: UInt64(price)!, budget: UInt64(budget)!), expiration: self.expiration ?? .None))
         var data = Data()
         try transactionData.serialize(to: &data)
         return data
     }
 }
 extension SuiTransactionBuilder{
-    //prepare
+    public func signWithKeypair(keypair: SuiKeypair) throws -> SuiExecuteTransactionBlock{
+        let serializeTransactionData = try self.build()
+        return try serializeTransactionData.signTxnBytesWithKeypair(keypair: keypair)
+    }
+}
+extension SuiTransactionBuilder{
+    // prepare
+    public func prepare(provider: SuiJsonRpcProvider) -> Promise<Bool>{
+        return Promise { seal in
+            DispatchQueue.global().async(.promise) {
+                var objectsToResolve = [SuiObjectsToResolve]()
+                var moveModulesToResolve = [SuiMoveCallTransaction]()
+                try self.resolveTransactions(moveModulesToResolve: &moveModulesToResolve, objectsToResolve: &objectsToResolve)
+
+                for moveCall in moveModulesToResolve {
+                    let params = try provider.getNormalizedMoveFunctionParams(target: moveCall.target).wait()
+                    guard params.count == moveCall.arguments.count else {
+                        throw SuiError.BuildTransactionError.ConstructTransactionDataError("Incorrect number of arguments.")
+                    }
+                    try self.serializationPureType(apiMoveParams: params, originMoveArguments: moveCall.arguments, objectsToResolve: &objectsToResolve)
+                }
+
+                if objectsToResolve.count > 0{
+                    let dedupedIds = Array(Set(objectsToResolve.map { $0.id }))
+                    let objects = try provider.multiGetObjects(model: SuiMultiGetObjects(ids: dedupedIds, option: SuiObjectDataOptions(showType: true, showOwner: true))).wait()
+                    let objectsById = Dictionary(uniqueKeysWithValues: dedupedIds.enumerated().map { (index, element) in
+                        return (element, objects[index])
+                    })
+                    let invalidObjects = objectsById.compactMap { _, value in
+                        guard let _ = value.error else {
+                            return nil
+                        }
+                        return value
+                    } as [SuiObjectResponse]
+                    if invalidObjects.count > 0{
+                        throw SuiError.BuildTransactionError.ConstructTransactionDataError("input objects are not invalid:")
+                    }
+                    for objectsToResolve in objectsToResolve {
+                        if let object = objectsById[objectsToResolve.id] {
+                            var input = objectsToResolve.input
+                            let normalizedType = objectsToResolve.normalizedType
+                            let initialSharedVersion =  object.getSharedObjectInitialVersion()
+                            if let version = initialSharedVersion, let value = input.value {
+                                let mutable = value.isMutableSharedObjectInput() || ((normalizedType != nil) && (normalizedType?.extractMutableReference() != nil))
+                                input.value = .CallArg(.Object(.Shared(.init(objectId: objectsToResolve.id, initialSharedVersion: UInt64(version), mutable: mutable))))
+                            } else if let objectRef = object.getObjectReference() {
+                                input.value = .CallArg(.Object(.ImmOrOwned(objectRef)))
+                            }
+                            try self.updateInput(input: input)
+                        }
+                    }
+                    seal.fulfill(true)
+                } else {
+                    seal.fulfill(true)
+                }
+            }.catch { error in
+                seal.reject(error)
+            }
+        }
+    }
     public func resolveTransactions(moveModulesToResolve: inout [SuiMoveCallTransaction], objectsToResolve: inout [SuiObjectsToResolve]) throws{
         try transactions?.forEach({ transactionInner in
             if case .MoveCall(let moveCallTransaction) = transactionInner {
@@ -98,9 +176,13 @@ extension SuiTransactionStruct{
         if case .Str(let _str) = input.value{
             if input.type == "object"{
                 objectsToResolve.append(SuiObjectsToResolve(id: _str, input: inputs![index], normalizedType: nil))
-            }else{
-                throw SuiError.BuildTransactionError.ConstructTransactionDataError("Unexpected input format.")
+                return
             }
+            if input.type == "pure"{
+                inputs?[Int(input.index)].value = SuiJsonValue.CallArg(try SuiInputs.Pure(value: UInt64(_str)!))
+                return
+            }
+            throw SuiError.BuildTransactionError.ConstructTransactionDataError("Unexpected input format.")
         }
         else{
             throw SuiError.BuildTransactionError.ConstructTransactionDataError("Unexpected input format.")
@@ -206,25 +288,26 @@ extension SuiTransactionBuilder{
                 throw SuiError.BuildTransactionError.ConstructTransactionDataError("Movecall InputValue Is Invalid")
         }
         for (index, param) in apiMoveParams.enumerated() {
-            guard case .TransactionBlockInput(let input) = originMoveArguments[index], let inputValue = inputs[Int(input.index)].value else {
-                throw SuiError.BuildTransactionError.ConstructTransactionDataError("Movecall InputValue Is Invalid")
-            }
-            if case .CallArg(_) = inputValue {
-                continue
-            }
-            let serType = try SuiTransactionBuilder.getPureSerializationType(normalizedType: param, argVal: inputValue)
-            if let pureType = serType.flatMap({ $0 }) {
-                self.inputs?[Int(input.index)].value = .CallArg(.Pure(pureType))
-                continue
-            }
-
-            if let _ = param.extractStructTag(), case .MoveNormalizedTypeParameterType(_) = param{
-                guard let value = inputValue.value() as? String else {
-                    throw SuiError.DataSerializerError.ParseError("expect the argument to be an object id string, got {\(inputValue.value())}")
+            if case .TransactionBlockInput(let input) = originMoveArguments[index], let inputValue = inputs[Int(input.index)].value {
+                if case .CallArg(_) = inputValue {
+                    continue
                 }
-                objectsToResolve.append(SuiObjectsToResolve(id: value, input: self.inputs![Int(input.index)], normalizedType: param))
-                return
+                let serType = try SuiTransactionBuilder.getPureSerializationType(normalizedType: param, argVal: inputValue)
+                if let pureType = serType.flatMap({ $0 }) {
+                    self.inputs?[Int(input.index)].value = .CallArg(.Pure(pureType))
+                    continue
+                }
+
+                if let _ = param.extractStructTag(){
+                    guard let value = inputValue.value() as? String else {
+                        throw SuiError.DataSerializerError.ParseError("expect the argument to be an object id string, got {\(inputValue.value())}")
+                    }
+                    objectsToResolve.append(SuiObjectsToResolve(id: value, input: self.inputs![Int(input.index)], normalizedType: param))
+                    continue
+                }
             }
+            continue
+           
         }
     }
     /**

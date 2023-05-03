@@ -40,6 +40,7 @@ public struct SuiCoin{
         return String(coinTypeArg[coinTypeArg.index(index, offsetBy: 1)...])
     }
     public static func getCoinStructTag(coinTypeArg: String) -> SuiStructTag?{
+        let coinTypeArg = coinTypeArg.replacingOccurrences(of: " ", with: "")
         let args = coinTypeArg.components(separatedBy: "::")
         guard args.count == 3, let address = try? SuiAddress(value: args[0]) else{
             return nil

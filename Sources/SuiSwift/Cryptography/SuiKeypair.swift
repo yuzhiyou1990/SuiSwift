@@ -46,3 +46,38 @@ public enum SuiDerivationPath{
         }
     }
 }
+extension SuiDerivationPath: Codable{
+    enum SuiPathCodingError: Error{
+        case DecodeError
+    }
+    enum CodingKeys: String, CodingKey {
+        case DERVIATION_PATH_PURPOSE_ED25519 = "ED25519_PATH"
+        case DERVIATION_PATH_PURPOSE_SECP256K1 = "SECP256K1_PATH"
+    }
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        switch self {
+        case .DERVIATION_PATH_PURPOSE_ED25519(_):
+            try container.encode(self.PATH(), forKey: .DERVIATION_PATH_PURPOSE_ED25519)
+        case .DERVIATION_PATH_PURPOSE_SECP256K1(_):
+            try container.encode(self.PATH(), forKey: .DERVIATION_PATH_PURPOSE_SECP256K1)
+        }
+    }
+    
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        
+        if let value = try? container.decode(String.self, forKey: .DERVIATION_PATH_PURPOSE_ED25519),
+           let indexs = value.components(separatedBy: "/").last,
+           let addressIndex = indexs.components(separatedBy: "'").first{
+            self = .DERVIATION_PATH_PURPOSE_ED25519(address_index: addressIndex)
+            return
+        }
+        if let value = try? container.decode(String.self, forKey: .DERVIATION_PATH_PURPOSE_SECP256K1),
+           let addressIndex = value.components(separatedBy: "/").last{
+            self = .DERVIATION_PATH_PURPOSE_SECP256K1(address_index: addressIndex)
+            return
+        }
+        throw SuiPathCodingError.DecodeError
+    }
+}

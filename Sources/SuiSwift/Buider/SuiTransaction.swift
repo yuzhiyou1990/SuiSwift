@@ -14,14 +14,13 @@ public struct SuiObjectsToResolve{
     public let input: SuiTransactionBlockInput
     public let normalizedType: SuiMoveNormalizedType?
 }
-
 public class SuiTransaction{
     public var sender: SuiAddress
     public var gasPrice: UInt64
     public var gasBudget: UInt64
-    public var gasPayment: [SuiObjectRef]?
+    public var gasPayment: [SuiObjectRef]
     public static let MAX_GAS_OBJECTS = 256
-    private var blockData: SuiTransactionBuilder? = nil
+    private var blockData: SuiTransactionBuilder?
     
     /** Returns an argument for the gas coin, to be used in a transaction. */
     public var gas: SuiTransactionArgumentType {
@@ -32,7 +31,7 @@ public class SuiTransaction{
         self.blockData?.gasConfig.payment = payment
     }
     
-    public init(sender: SuiAddress, gasPrice: UInt64 = 1000, gasBudget: UInt64 = 2986000, gasPayment: [SuiObjectRef]? = nil) {
+    public init(sender: SuiAddress, gasPrice: UInt64 = 1000, gasBudget: UInt64 = 2986000, gasPayment: [SuiObjectRef] = []) {
         self.sender = sender
         self.gasPrice = gasPrice
         self.gasBudget = gasBudget
@@ -146,7 +145,7 @@ public class SuiTransaction{
     public func build(provider: SuiJsonRpcProvider) -> Promise<Data>{
         return Promise { seal in
             DispatchQueue.global().async(.promise){
-                let _ = try self.prepare(provider: provider).wait()
+                _ = try self.prepare(provider: provider).wait()
                 guard let data = try self.blockData?.build() else{
                     throw SuiError.BuildTransactionError.ConstructTransactionDataError("BlockData Build Error")
                 }
@@ -160,58 +159,16 @@ public class SuiTransaction{
     public func prepare(provider: SuiJsonRpcProvider) -> Promise<Bool>{
         return Promise { seal in
             DispatchQueue.global().async(.promise) {
-                var objectsToResolve = [SuiObjectsToResolve]()
-                var moveModulesToResolve = [SuiMoveCallTransaction]()
-                try self.blockData?.resolveTransactions(moveModulesToResolve: &moveModulesToResolve, objectsToResolve: &objectsToResolve)
-
-                for moveCall in moveModulesToResolve {
-                    let params = try provider.getNormalizedMoveFunctionParams(target: moveCall.target).wait()
-                    guard params.count == moveCall.arguments.count else {
-                        throw SuiError.BuildTransactionError.ConstructTransactionDataError("Incorrect number of arguments.")
-                    }
-                    try self.blockData?.serializationPureType(apiMoveParams: params, originMoveArguments: moveCall.arguments, objectsToResolve: &objectsToResolve)
+                guard let blockData = self.blockData else{
+                    throw SuiError.BuildTransactionError.ConstructTransactionDataError("")
                 }
-
-                if objectsToResolve.count > 0{
-                    let dedupedIds = Array(Set(objectsToResolve.map { $0.id }))
-                    let objects = try provider.multiGetObjects(model: SuiMultiGetObjects(ids: dedupedIds, option: SuiObjectDataOptions(showType: true))).wait()
-                    let objectsById = Dictionary(uniqueKeysWithValues: dedupedIds.enumerated().map { (index, element) in
-                        return (element, objects[index])
-                    })
-                    let invalidObjects = objectsById.compactMap { _, value in
-                        guard let _ = value.error else {
-                            return nil
-                        }
-                        return value
-                    } as [SuiObjectResponse]
-                    if invalidObjects.count > 0{
-                        throw SuiError.BuildTransactionError.ConstructTransactionDataError("input objects are not invalid:")
-                    }
-                    for objectsToResolve in objectsToResolve {
-                        if let object = objectsById[objectsToResolve.id] {
-                            var input = objectsToResolve.input
-                            let normalizedType = objectsToResolve.normalizedType
-                            let initialSharedVersion =  object.getSharedObjectInitialVersion()
-                            if let version = initialSharedVersion, let value = input.value {
-                                let mutable = value.isMutableSharedObjectInput() || ((normalizedType != nil) && (normalizedType?.extractMutableReference() != nil))
-                                input.value = .CallArg(.Object(.Shared(.init(objectId: objectsToResolve.id, initialSharedVersion: UInt64(version), mutable: mutable))))
-                            } else if let objectRef = object.getObjectReference() {
-                                input.value = .CallArg(.Object(.ImmOrOwned(objectRef)))
-                            }
-                            try self.blockData?.updateInput(input: input)
-                        }
-                    }
-                    seal.fulfill(true)
-                } else {
-                    seal.fulfill(true)
-                }
+                seal.fulfill(try blockData.prepare(provider: provider).wait())
             }.catch { error in
                 seal.reject(error)
             }
         }
     }
 
-    
     public func selectGasPayment(provider: SuiJsonRpcProvider) -> Promise<[SuiObjectRef]>{
         return Promise { seal in
             guard let gasOwner = self.blockData?.gasConfig.owner ?? self.blockData?.sender else {
@@ -251,4 +208,64 @@ public class SuiTransaction{
     }
 
 }
-
+// dapp
+//extension SuiTransaction{
+//    public func configTransactions(inputs: [[String: Any]], transactions: [[String: Any]]) throws{
+//        try transactions.forEach { dic in
+//            guard let kind = dic["kind"] as? String else{
+//                throw SuiError.BuildTransactionError.InvalidSerializeData
+//            }
+//            switch kind{
+//            case SuiMoveCallTransaction.kind:
+//                guard let target = dic["target"] as? String,
+//                      let argumentDics = dic["arguments"] as? [[String: Any]] else{
+//                    throw SuiError.BuildTransactionError.ConstructTransactionDataError("Invalid Target")
+//                }
+//                let arguments = try argumentDics.map { dic in
+//                    guard let typeKind = dic["kind"] as? String else{
+//                        throw SuiError.BuildTransactionError.ConstructTransactionDataError("Invalid arguments")
+//                    }
+//                    switch typeKind{
+//                    case SuiTransactionBlockInput.kind:
+//                        guard let type = dic["type"] as? String,
+//                              let index = dic["index"] as? UInt else{
+//                            throw SuiError.BuildTransactionError.ConstructTransactionDataError("Invalid arguments")
+//                        }
+//                        if type == "object" {
+//
+//                        }
+//                    }
+//                    return try SuiTransactionArgumentType.type(dic: dic)
+//                }
+//                var moveCall = SuiMoveCallTransaction(target: target, arguments: arguments)
+//            }
+//        }
+//    }
+//}
+//
+extension SuiTransaction{
+    public static func transactionSui(from: SuiAddress, to: SuiAddress, amount: BigUInt, gasPrice: UInt64 = 1, gasBudget: UInt64 = 50000000000, gasPayment: [SuiObjectRef] = []) throws -> SuiTransaction{
+        let transactionSui = SuiTransaction(sender: from)
+        transactionSui.setPatment(payment: gasPayment)
+        let splitCoins = try transactionSui.splitCoins(transaction: .init(coin: transactionSui.gas, amounts: [transactionSui.setPure(value: UInt64(amount.description) ?? 0)]))
+        try transactionSui.transferObjects(transaction: .init(objects: [splitCoins], address: transactionSui.setPure(value: to)))
+        return transactionSui
+    }
+    
+    public static func transactionCoin(from: SuiAddress, to: SuiAddress, amount: BigUInt, gasPrice: UInt64 = 1, gasBudget: UInt64 = 50000000000, gasPayment: [SuiObjectRef] = [], objectids: [SuiObjectRef]) throws -> SuiTransaction{
+        let transactionSui = SuiTransaction(sender: from)
+        transactionSui.setPatment(payment: gasPayment)
+        guard objectids.count > 0 else{
+            throw SuiError.BuildTransactionError.ConstructTransactionDataError("invalid objectids")
+        }
+        let arguments = try objectids.map { ref in
+            try transactionSui.setObject(jsonValue: .CallArg(.Object(.ImmOrOwned(ref))))
+        }
+        if arguments.count > 1 {
+            transactionSui.mergeCoins(transaction: .init(destination: arguments[0], sources: Array(arguments[1..<arguments.count - 1])))
+        }
+        let splitCoins = try transactionSui.splitCoins(transaction: .init(coin: arguments[0], amounts: [transactionSui.setPure(value: UInt64(amount.description) ?? 0)]))
+        try transactionSui.transferObjects(transaction: .init(objects: [splitCoins], address: transactionSui.setPure(value: to)))
+        return transactionSui
+    }
+}

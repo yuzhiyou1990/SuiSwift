@@ -27,6 +27,7 @@ public class SuiError{
         case InvalidMnemonics
         case InvalidPublicKey
         case InvalidAddress
+        case InvalidSignatureScheme
         case otherEror(String)
         public var errorDescription: String?{
             switch self {
@@ -44,6 +45,8 @@ public class SuiError{
                 return "Invalid PublicKey"
             case .InvalidAddress:
                 return "Invalid Address"
+            case .InvalidSignatureScheme:
+                return "Invalid Signature Scheme"
             case .otherEror(let string):
                 return string
             }

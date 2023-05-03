@@ -58,15 +58,8 @@ extension VarData: BorshSerializable {
 
 extension Bool: BorshSerializable {
     public func serialize(to writer: inout Data) throws {
-        let intRepresentation: UInt8 = self ? 0 : 1
+        let intRepresentation: UInt8 = self ? 1 : 0
         try intRepresentation.serialize(to: &writer)
-    }
-}
-
-extension BigInt: BorshSerializable {
-    public func serialize(to writer: inout Data) throws {
-        let data = self.serialize()
-        writer.append(data)
     }
 }
 

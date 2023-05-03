@@ -9,7 +9,7 @@ final class SuiRPCS: XCTestCase {
     func test_getcoins() throws {
         let reqeustExpectation = expectation(description: #function)
         
-        self.client.getCoins(model: try! SuiRequestCoins(owner: SuiAddress(value: "0x0b747f5e46ba9050e3fa071b6388c94df3b0d98b9ee642a42207222fb779319f"))).done { coins in
+        self.client.getCoins(model: try! SuiRequestCoins(owner: SuiAddress(value: "0x3acadaf248b19e99626d4a506423cf073d4355788e82de2b7e9ad98acf4d6d27"))).done { coins in
             
             reqeustExpectation.fulfill()
             
@@ -23,7 +23,7 @@ final class SuiRPCS: XCTestCase {
     func test_getAllcoins() throws {
         let reqeustExpectation = expectation(description: #function)
         
-        self.client.getAllCoins(model: try! SuiRequestCoins(owner: SuiAddress(value: "0x0b747f5e46ba9050e3fa071b6388c94df3b0d98b9ee642a42207222fb779319f"), coinType: nil)).done { coins in
+        self.client.getAllCoins(model: try! SuiRequestCoins(owner: SuiAddress(value: "0x3acadaf248b19e99626d4a506423cf073d4355788e82de2b7e9ad98acf4d6d27"), coinType: nil)).done { coins in
             
             reqeustExpectation.fulfill()
             
@@ -37,8 +37,8 @@ final class SuiRPCS: XCTestCase {
     func test_getBalance() throws {
         let reqeustExpectation = expectation(description: #function)
         
-        self.client.getBalance(model: try! SuiRequestBalance(owner: SuiAddress(value: "0x0b747f5e46ba9050e3fa071b6388c94df3b0d98b9ee642a42207222fb779319f"))).done { balance in
-            print(BigInt(balance.totalBalance).description)
+        self.client.getBalance(model: try! SuiRequestBalance(owner: SuiAddress(value: "0x3acadaf248b19e99626d4a506423cf073d4355788e82de2b7e9ad98acf4d6d27"))).done { balance in
+            print(BigInt(balance.totalBalance)?.description)
             reqeustExpectation.fulfill()
             
         }.catch { error in
@@ -51,7 +51,7 @@ final class SuiRPCS: XCTestCase {
     func test_getAllBalance() throws {
         let reqeustExpectation = expectation(description: #function)
         
-        self.client.getAllBalance(model: try! SuiRequestBalance(owner: SuiAddress(value: "0x0b747f5e46ba9050e3fa071b6388c94df3b0d98b9ee642a42207222fb779319f"), coinType: nil)).done { balances in
+        self.client.getAllBalance(model: try! SuiRequestBalance(owner: SuiAddress(value: "0x3acadaf248b19e99626d4a506423cf073d4355788e82de2b7e9ad98acf4d6d27"), coinType: nil)).done { balances in
             reqeustExpectation.fulfill()
             
         }.catch { error in
@@ -78,7 +78,7 @@ final class SuiRPCS: XCTestCase {
     func test_getObject() throws {
         let reqeustExpectation = expectation(description: #function)
         
-        self.client.getObject(model: SuiGetObject(id: "0x00751deff3888825916368b0338ddcb7f282b435a0930a366f1f9866351d5d51")).done { response in
+        self.client.getObject(model: SuiGetObject(id: "0x3acadaf248b19e99626d4a506423cf073d4355788e82de2b7e9ad98acf4d6d27")).done { response in
             
             reqeustExpectation.fulfill()
             
@@ -92,7 +92,7 @@ final class SuiRPCS: XCTestCase {
     func test_multiGetObjects() throws {
         let reqeustExpectation = expectation(description: #function)
         
-        self.client.multiGetObjects(model: SuiMultiGetObjects(ids: ["0x00751deff3888825916368b0338ddcb7f282b435a0930a366f1f9866351d5d51"])).done { response in
+        self.client.multiGetObjects(model: SuiMultiGetObjects(ids: ["0x3acadaf248b19e99626d4a506423cf073d4355788e82de2b7e9ad98acf4d6d27"])).done { response in
             
             reqeustExpectation.fulfill()
             
