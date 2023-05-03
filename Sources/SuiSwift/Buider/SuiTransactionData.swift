@@ -1,6 +1,6 @@
 //
 //  File.swift
-//  
+//
 //
 //  Created by li shuai on 2023/3/30.
 //
@@ -52,7 +52,7 @@ extension SuiTransactionBuilder{
     }
 }
 extension SuiTransactionBuilder{
-    func build() throws -> Data{
+   public func build() throws -> Data{
         guard let sender = self.sender else{
             throw SuiError.BuildTransactionError.ConstructTransactionDataError("Missing sender")
         }
@@ -179,12 +179,15 @@ extension SuiTransactionStruct{
                 return
             }
             if input.type == "pure"{
-                inputs?[Int(input.index)].value = SuiJsonValue.CallArg(try SuiInputs.Pure(value: UInt64(_str)!))
-                return
+                if let address = try? SuiAddress(value: _str) {
+                    inputs?[Int(input.index)].value = SuiJsonValue.CallArg(try SuiInputs.Pure(value: address))
+                } else if Int(_str) != nil {
+                    inputs?[Int(input.index)].value = SuiJsonValue.CallArg(try SuiInputs.Pure(value: UInt64(_str)!))
+                } else {
+                    inputs?[Int(input.index)].value = SuiJsonValue.CallArg(try SuiInputs.Pure(value: _str))
+                }
             }
-            throw SuiError.BuildTransactionError.ConstructTransactionDataError("Unexpected input format.")
-        }
-        else{
+        } else {
             throw SuiError.BuildTransactionError.ConstructTransactionDataError("Unexpected input format.")
         }
     }

@@ -22,7 +22,7 @@ final class SuiTransactionTests: XCTestCase {
                 
                 let data = try self.builder.build(provider: self.provider).wait()
                 let block = try data.signTxnBytesWithKeypair(keypair: self.keypair)
-                let tx = try self.provider.executeTransactionBlock(model: block).wait()
+                let tx: SuiTransactionBlockResponse = try self.provider.executeTransactionBlock(model: block).wait()
                 debugPrint("success \(tx.digest.value)")
                 reqeustExpectation.fulfill()
             } catch let error {
@@ -44,7 +44,7 @@ final class SuiTransactionTests: XCTestCase {
                 let tx = try SuiTransaction.transactionCoin(from: try SuiAddress(value: "0x3acadaf248b19e99626d4a506423cf073d4355788e82de2b7e9ad98acf4d6d27"), to: try SuiAddress(value: "0xd71c61a69a485e2fd44f5135c018ce8baa1e86dbc46199a699134bf4c9a71695"), amount: amount, gasPayment: payments, objectids: objectids)
                 let data = try tx.build(provider: self.provider).wait()
                 let signTx = try data.signTxnBytesWithKeypair(keypair: self.keypair)
-                let txTransaction = try self.provider.executeTransactionBlock(model: signTx).wait()
+                let txTransaction: SuiTransactionBlockResponse  = try self.provider.executeTransactionBlock(model: signTx).wait()
                 debugPrint("success \(txTransaction.digest.value)")
                 reqeustExpectation.fulfill()
                 
