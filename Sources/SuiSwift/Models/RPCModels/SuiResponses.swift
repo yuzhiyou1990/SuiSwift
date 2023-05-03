@@ -20,7 +20,7 @@ public struct SuiCoinBalance: Decodable{
     }
     public let coinType: String
     public let coinObjectCount: UInt64
-    public let totalBalance: UInt64
+    public let totalBalance: String
     public let lockedBalance: SuiLockedBalance
 }
 

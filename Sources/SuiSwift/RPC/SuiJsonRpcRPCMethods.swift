@@ -8,6 +8,7 @@
 import Foundation
 import PromiseKit
 import BigInt
+import AnyCodable
 
 extension SuiJsonRpcProvider{
     public enum RPCMethod: String, Encodable{
@@ -91,8 +92,7 @@ extension SuiJsonRpcProvider{
     public func getOwnedObjects(model: SuiGetOwnedObjects) -> Promise<SuiPaginatedObjectsResponse>{
         return  self.sendRequest(method: .GetOwnedObjects, params: model)
     }
-    
-    
+
     /**
        * Get details about an object
        */
@@ -108,6 +108,10 @@ extension SuiJsonRpcProvider{
     }
     
     public func executeTransactionBlock(model: SuiExecuteTransactionBlock) -> Promise<SuiTransactionBlockResponse>{
+        return  self.sendRequest(method: .ExecuteTransactionBlock, params: model)
+    }
+    
+    public func executeTransactionBlock(model: SuiExecuteTransactionBlock) -> Promise<AnyCodable>{
         return  self.sendRequest(method: .ExecuteTransactionBlock, params: model)
     }
     
@@ -247,6 +251,7 @@ extension SuiJsonRpcProvider{
     public func getNormalizedMoveFunctionParams(target: String) -> Promise<[SuiMoveNormalizedType]> {
         return Promise { seal in
             DispatchQueue.global().async(.promise){
+                let target = target.replacingOccurrences(of: " ", with: "")
                 let words = target.components(separatedBy: "::")
                 guard words.count == 3 else{
                     throw SuiError.BuildTransactionError.ConstructTransactionDataError("moveModulesToResolve target parse error")

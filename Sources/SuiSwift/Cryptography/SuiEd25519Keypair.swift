@@ -26,8 +26,8 @@ public struct SuiEd25519Keypair: SuiKeypair{
     }
     public init(seed: Data, path: String = "") throws {
         let masterKeyData = seed.hmacSHA512(key: "ed25519 seed".data(using: .utf8)!)
-        let key = masterKeyData.subdata(in:0..<32)
-        let chainCode = masterKeyData.subdata(in:32..<64)
+        let key = masterKeyData.subdata(in: 0..<32)
+        let chainCode = masterKeyData.subdata(in: 32..<64)
         let newSeed = SuiEd25519Keypair.deriveKey(path: path, key: key, chainCode: chainCode).key
         try self.init(seed: newSeed)
     }
@@ -67,5 +67,3 @@ public struct SuiEd25519Keypair: SuiKeypair{
         return .ED25519
     }
 }
-
-

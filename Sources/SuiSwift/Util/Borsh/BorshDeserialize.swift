@@ -122,4 +122,3 @@ extension Set: BorshDeserializable where Element: BorshDeserializable & Equatabl
         self = try Set(Array<Element>.init(from: &reader))
     }
 }
-

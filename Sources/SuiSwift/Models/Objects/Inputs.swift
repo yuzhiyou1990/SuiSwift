@@ -32,6 +32,7 @@ public enum SuiObjectVersion: Decodable{
     }
 }
 public struct SuiInputs{
+    
     public static func Pure<T>(value: T, type: String? = nil) throws -> SuiCallArg where T: BorshCodable{
         var data = Data()
         try value.serialize(to: &data)

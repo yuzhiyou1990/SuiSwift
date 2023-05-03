@@ -31,7 +31,7 @@ public class SuiJsonRpcProvider{
         public var result: Result
         public var id: String
     }
-    public init(url: URL = URL(string: "https://wallet-rpc.testnet.sui.io")!) {
+    public init(url: URL = URL(string: "https://fullnode.testnet.sui.io/")!) {
         self.url = url
         self.session = URLSession(configuration: .default)
     }

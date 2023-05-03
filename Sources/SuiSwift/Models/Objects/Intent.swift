@@ -50,6 +50,5 @@ extension Data{
         intentMessage.append(contentsOf: message)
         return intentMessage
     }
-
 }
 

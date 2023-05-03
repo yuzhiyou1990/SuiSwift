@@ -10,7 +10,11 @@ final class SuiMoveCallTests: XCTestCase {
     
     func test_getMoveFunctionArgTypes() throws {
         let reqeustExpectation = expectation(description: "test_getMoveFunctionArgTypes")
-        
+        DispatchQueue.global().async(.promise) {
+            return try self.client.getCoinMetadata().wait()
+        }.done { metadata in
+            debugPrint("metadata: \(metadata)")
+        }
         self.client.getMoveFunctionArgTypes(packageId: DEFAULT_PACKAGE, moduleName: DEFAULT_MODULE, functionName: DEFAULT_FUNCTION).done { atgTypes in
             
             reqeustExpectation.fulfill()
