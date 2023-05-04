@@ -39,11 +39,11 @@
       },
       {
         "package": "Blake2",
-        "repositoryURL": "https://github.com/tesseract-one/Blake2.swift.git",
+        "repositoryURL": "https://github.com/lishuailibertine/Blake2.swift",
         "state": {
           "branch": null,
-          "revision": "106f68231100021e1f745779e241f81a065ad0de",
-          "version": "0.1.2"
+          "revision": "ffcf99a3d7f83d5bf2200720e75fa29040a8b604",
+          "version": "0.1.3"
         }
       },
       {

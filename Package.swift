@@ -17,7 +17,7 @@ let package = Package(
         .package(url: "https://github.com/mathwallet/BIP39swift", from: "1.0.1"),
         .package(url: "https://github.com/mxcl/PromiseKit.git", from: "6.8.4"),
         .package(name: "Secp256k1Swift", url: "https://github.com/mathwallet/Secp256k1Swift.git", from: "1.3.1"),
-        .package(name: "Blake2", url: "https://github.com/tesseract-one/Blake2.swift.git", from: "0.1.2"),
+        .package(name: "Blake2", url: "https://github.com/lishuailibertine/Blake2.swift", from: "0.1.3"),
         .package(url: "https://github.com/attaswift/BigInt", from: "5.3.0"),
         .package(url: "https://github.com/Flight-School/AnyCodable.git", .exact("0.6.1"))
         // Dependencies declare other packages that this package depends on.

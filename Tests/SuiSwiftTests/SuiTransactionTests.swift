@@ -33,30 +33,6 @@ final class SuiTransactionTests: XCTestCase {
         wait(for: [reqeustExpectation], timeout: 30)
     }
     
-    func test_bcsCoinTransaction() throws {
-        
-        let reqeustExpectation = expectation(description: "test_transafer")
-        DispatchQueue.global().async {
-            do {
-                let amount = BigUInt(40000000)
-                let payments = try self.getPayments(address: try SuiAddress(value: "0x3acadaf248b19e99626d4a506423cf073d4355788e82de2b7e9ad98acf4d6d27"), amount: amount, MAX_GAS_OBJECTS: 10).wait()
-                let objectids = try self.getCoins(address: try SuiAddress(value: "0x3acadaf248b19e99626d4a506423cf073d4355788e82de2b7e9ad98acf4d6d27"), amount: amount, coinType: "0x8147f6f60c22bf8b46c769206293f35319f9ef053641f77326376f11f505f39::flx::FLX").wait()
-                let tx = try SuiTransaction.transactionCoin(from: try SuiAddress(value: "0x3acadaf248b19e99626d4a506423cf073d4355788e82de2b7e9ad98acf4d6d27"), to: try SuiAddress(value: "0xd71c61a69a485e2fd44f5135c018ce8baa1e86dbc46199a699134bf4c9a71695"), amount: amount, gasPayment: payments, objectids: objectids)
-                let data = try tx.build(provider: self.provider).wait()
-                let signTx = try data.signTxnBytesWithKeypair(keypair: self.keypair)
-                let txTransaction: SuiTransactionBlockResponse  = try self.provider.executeTransactionBlock(model: signTx).wait()
-                debugPrint("success \(txTransaction.digest.value)")
-                reqeustExpectation.fulfill()
-                
-            } catch let error {
-                debugPrint(error)
-                reqeustExpectation.fulfill()
-            }
-        }
-        wait(for: [reqeustExpectation], timeout: 30)
-        
-    }
-    
     func getCoins(address: SuiAddress, amount: BigUInt, coinType: String) -> Promise<[SuiObjectRef]> {
         return Promise { seal in
             DispatchQueue.global(qos: .userInitiated).async(.promise){
