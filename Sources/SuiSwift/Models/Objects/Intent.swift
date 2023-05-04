@@ -23,8 +23,8 @@ public enum SuiIntentVersion: UInt8{
 
 // transactionData
 extension Data{
-    public func signTxnBytesWithKeypair(keypair: SuiKeypair) throws -> SuiExecuteTransactionBlock{
-        let intentMessage = messageWithIntent(scope: .TransactionData, message: self.bytes)
+    public func signTxnBytesWithKeypair(keypair: SuiKeypair, scope: SuiIntentScope = .TransactionData) throws -> SuiExecuteTransactionBlock{
+        let intentMessage = messageWithIntent(scope: scope, message: self.bytes)
         let hash = try Blake2.hash(.b2b, size: 32, bytes: intentMessage)
         let signData = try keypair.signData(message: hash)
         guard let encodeStr = Data(self.bytes).encodeBase64Str() else {
