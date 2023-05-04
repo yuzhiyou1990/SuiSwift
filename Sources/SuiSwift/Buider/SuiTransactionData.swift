@@ -190,25 +190,22 @@ extension SuiTransactionBuilder{
                     self.inputs?[Int(input.index)].value = .CallArg(.Pure(pureType))
                     continue
                 }
-                for input in inputs {
-                    if let _ = param.extractStructTag() {
-                        try appendObjectToResolve(param, inputValue, input)
-                        continue
+                if let _ = param.extractStructTag(){
+                    guard let value = inputValue.value() as? String else {
+                        throw SuiError.DataSerializerError.ParseError("expect the argument to be an object id string, got {\(inputValue.value())}")
                     }
-                    if case .MoveNormalizedTypeParameterType(_) = param {
-                        try appendObjectToResolve(param, inputValue, input)
-                        continue
+                    objectsToResolve.append(SuiObjectsToResolve(id: value, input: self.inputs![Int(input.index)], normalizedType: param))
+                    continue
+                }
+                if case .MoveNormalizedTypeParameterType(_) = param{
+                    guard let value = inputValue.value() as? String else {
+                        throw SuiError.DataSerializerError.ParseError("expect the argument to be an object id string, got {\(inputValue.value())}")
                     }
+                    objectsToResolve.append(SuiObjectsToResolve(id: value, input: self.inputs![Int(input.index)], normalizedType: param))
+                    continue
                 }
             }
             continue
-           
-        }
-        func appendObjectToResolve(_ param: SuiMoveNormalizedType, _ inputValue: SuiJsonValue, _ input: SuiTransactionBlockInput) throws {
-            guard let value = inputValue.value() as? String else {
-                throw SuiError.DataSerializerError.ParseError("expect the argument to be an object id string, got {\(inputValue.value())}")
-            }
-            objectsToResolve.append(SuiObjectsToResolve(id: value, input: self.inputs![Int(input.index)], normalizedType: param))
         }
     }
     /**
