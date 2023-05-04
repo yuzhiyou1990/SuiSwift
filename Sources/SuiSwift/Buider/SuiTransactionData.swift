@@ -23,6 +23,35 @@ public class SuiTransactionBuilder{
         self.inputs = inputs
         self.transactions = transactions
     }
+    public func signWithKeypair(keypair: SuiKeypair) throws -> SuiExecuteTransactionBlock{
+        let serializeTransactionData = try self.build()
+        return try serializeTransactionData.signTxnBytesWithKeypair(keypair: keypair)
+    }
+    public func build() throws -> Data{
+         guard let sender = self.sender else{
+             throw SuiError.BuildTransactionError.ConstructTransactionDataError("Missing sender")
+         }
+         guard let price = self.gasConfig.price, let budget = self.gasConfig.budget else{
+             throw SuiError.BuildTransactionError.ConstructTransactionDataError("Missing gasConfig")
+         }
+         guard let inputs = self.inputs else{
+             throw SuiError.BuildTransactionError.ConstructTransactionDataError("Missing inputs")
+         }
+         guard let transactions = self.transactions else{
+             throw SuiError.BuildTransactionError.ConstructTransactionDataError("Missing transactions")
+         }
+         let values = try inputs.map { input in
+             guard case .CallArg(let callArg) = input.value else{
+                 throw SuiError.BuildTransactionError.ConstructTransactionDataError("invalid input value")
+             }
+             return callArg
+         }
+         let programmableTransaction = SuiProgrammableTransaction(inputs: values, transactions: transactions)
+         let transactionData = SuiTransactionData.V1(SuiTransactionDataV1(kind: .ProgrammableTransaction(programmableTransaction), sender: sender, gasData: SuiGasData(payment: self.gasConfig.payment, owner: gasConfig.owner ?? sender, price: UInt64(price)!, budget: UInt64(budget)!), expiration: self.expiration ?? .None))
+         var data = Data()
+         try transactionData.serialize(to: &data)
+         return data
+    }
     
     public func updateInput(input: SuiTransactionBlockInput) throws{
         guard let inputs = self.inputs else{
@@ -34,56 +63,7 @@ public class SuiTransactionBuilder{
         self.inputs![Int(index)].value = input.value
     }
 }
-extension SuiTransactionBuilder{
-    public static func ParseDAppTransaction(dic: [String: Any]) throws -> SuiTransactionBuilder{
-        guard let sender = dic["sender"] as? String,
-              let version = dic["version"] as? Int,
-              let inputs = dic["inputs"] as? [[String: Any]],
-              let transactions = dic["transactions"] as? [[String: Any]] else{
-            throw SuiError.BuildTransactionError.InvalidSerializeData
-        }
-        let blockInputs = try inputs.map { dic in
-            return try SuiTransactionBlockInput.input(dic: dic)
-        }
-        let blockTransactions = try transactions.map({ dic in
-            return try SuiTransactionInner.transactionType(dic: dic)
-        })
-        return SuiTransactionBuilder(version: version, sender: try SuiAddress(value: SuiAddress.normalizeSuiAddress(address: sender)), expiration: nil, inputs: blockInputs, transactions: blockTransactions)
-    }
-}
-extension SuiTransactionBuilder{
-    func build() throws -> Data{
-        guard let sender = self.sender else{
-            throw SuiError.BuildTransactionError.ConstructTransactionDataError("Missing sender")
-        }
-        guard let price = self.gasConfig.price, let budget = self.gasConfig.budget else{
-            throw SuiError.BuildTransactionError.ConstructTransactionDataError("Missing gasConfig")
-        }
-        guard let inputs = self.inputs else{
-            throw SuiError.BuildTransactionError.ConstructTransactionDataError("Missing inputs")
-        }
-        guard let transactions = self.transactions else{
-            throw SuiError.BuildTransactionError.ConstructTransactionDataError("Missing transactions")
-        }
-        let values = try inputs.map { input in
-            guard case .CallArg(let callArg) = input.value else{
-                throw SuiError.BuildTransactionError.ConstructTransactionDataError("invalid input value")
-            }
-            return callArg
-        }
-        let programmableTransaction = SuiProgrammableTransaction(inputs: values, transactions: transactions)
-        let transactionData = SuiTransactionData.V1(SuiTransactionDataV1(kind: .ProgrammableTransaction(programmableTransaction), sender: sender, gasData: SuiGasData(payment: self.gasConfig.payment, owner: gasConfig.owner ?? sender, price: UInt64(price)!, budget: UInt64(budget)!), expiration: self.expiration ?? .None))
-        var data = Data()
-        try transactionData.serialize(to: &data)
-        return data
-    }
-}
-extension SuiTransactionBuilder{
-    public func signWithKeypair(keypair: SuiKeypair) throws -> SuiExecuteTransactionBlock{
-        let serializeTransactionData = try self.build()
-        return try serializeTransactionData.signTxnBytesWithKeypair(keypair: keypair)
-    }
-}
+
 extension SuiTransactionBuilder{
     // prepare
     public func prepare(provider: SuiJsonRpcProvider) -> Promise<Bool>{
@@ -152,7 +132,7 @@ extension SuiTransactionBuilder{
                             needsResolution = true
                         }
                     }
-                    continue
+                    if needsResolution {break} else {continue}
                 }
                 if needsResolution {
                     moveModulesToResolve.append(moveCallTransaction)
@@ -170,113 +150,26 @@ extension SuiTransactionStruct{
             throw SuiError.BuildTransactionError.ConstructTransactionDataError("Missing input \(index)")
         }
         let input = _inputs[index]
-        if case .CallArg(_) = input.value{
-            return
+        guard let value = input.value else{
+            throw SuiError.BuildTransactionError.ConstructTransactionDataError("Unexpected input format.")
         }
-        if case .Str(let _str) = input.value{
+        switch value{
+        case .CallArg(_):
+            return
+        case .Str(let _str):
             if input.type == "object"{
                 objectsToResolve.append(SuiObjectsToResolve(id: _str, input: inputs![index], normalizedType: nil))
                 return
             }
             if input.type == "pure"{
-                inputs?[Int(input.index)].value = SuiJsonValue.CallArg(try SuiInputs.Pure(value: UInt64(_str)!))
-                return
+                var data = Data()
+                try SuiInputs.PureWithJsonValue(value: value, data: &data)
+                inputs?[Int(input.index)].value = SuiJsonValue.CallArg(.Pure(data.bytes))
             }
-            throw SuiError.BuildTransactionError.ConstructTransactionDataError("Unexpected input format.")
-        }
-        else{
-            throw SuiError.BuildTransactionError.ConstructTransactionDataError("Unexpected input format.")
-        }
-    }
-}
-extension SuiMoveCallTransaction{
-    public func encodeInput(inputs: inout [SuiTransactionBlockInput]?, objectsToResolve: inout [SuiObjectsToResolve]) throws {
-       try self.arguments.forEach { transactionArgumentType in
-            if case .TransactionBlockInput(let blockInput) =  transactionArgumentType {
-                try self.handleResolve(inputs: &inputs, index: Int(blockInput.index), objectsToResolve: &objectsToResolve)
-            }
-        }
-    }
-}
-
-extension SuiTransferObjectsTransaction{
-    public func encodeInput(inputs: inout [SuiTransactionBlockInput]?, objectsToResolve: inout [SuiObjectsToResolve]) throws {
-        try self.objects.forEach { transactionArgumentType in
-            if case .TransactionBlockInput(let blockInput) =  transactionArgumentType {
-                try self.handleResolve(inputs: &inputs, index: Int(blockInput.index), objectsToResolve: &objectsToResolve)
-            }
-        }
-        if case .TransactionBlockInput(let blockInput) =  self.address {
-            try self.handleResolve(inputs: &inputs, index: Int(blockInput.index), objectsToResolve: &objectsToResolve)
-        }
-    }
-}
-
-extension SuiSplitCoinsTransaction{
-    public func encodeInput(inputs: inout [SuiTransactionBlockInput]?, objectsToResolve: inout [SuiObjectsToResolve]) throws {
-        if case .TransactionBlockInput(let blockInput) =  self.coin {
-            try self.handleResolve(inputs: &inputs, index: Int(blockInput.index), objectsToResolve: &objectsToResolve)
-        }
-        try self.amounts.forEach { transactionArgumentType in
-            if case .TransactionBlockInput(let blockInput) =  transactionArgumentType {
-                try self.handleResolve(inputs: &inputs, index: Int(blockInput.index), objectsToResolve: &objectsToResolve)
-            }
-        }
-    }
-}
-extension SuiMergeCoinsTransaction{
-    public func encodeInput(inputs: inout [SuiTransactionBlockInput]?, objectsToResolve: inout [SuiObjectsToResolve]) throws {
-        if case .TransactionBlockInput(let blockInput) =  self.destination {
-            try self.handleResolve(inputs: &inputs, index: Int(blockInput.index), objectsToResolve: &objectsToResolve)
-        }
-        try self.sources.forEach { transactionArgumentType in
-            if case .TransactionBlockInput(let blockInput) =  transactionArgumentType {
-                try self.handleResolve(inputs: &inputs, index: Int(blockInput.index), objectsToResolve: &objectsToResolve)
-            }
-        }
-    }
-}
-extension SuiMakeMoveVecTransaction{
-    public func encodeInput(inputs: inout [SuiTransactionBlockInput]?, objectsToResolve: inout [SuiObjectsToResolve]) throws{
-        try self.objects.forEach { transactionArgumentType in
-            if case .TransactionBlockInput(let blockInput) =  transactionArgumentType {
-                try self.handleResolve(inputs: &inputs, index: Int(blockInput.index), objectsToResolve: &objectsToResolve)
-            }
-        }
-    }
-}
-
-extension SuiPublishTransaction{
-    public func encodeInput(inputs: inout [SuiTransactionBlockInput]?, objectsToResolve: inout [SuiObjectsToResolve]) throws{
-        debugPrint("kind !== 'Input'")
-    }
-}
-
-extension SuiUpgradeTransaction{
-    public func encodeInput(inputs: inout [SuiTransactionBlockInput]?, objectsToResolve: inout [SuiObjectsToResolve]) throws{
-        if case .TransactionBlockInput(let blockInput) =  self.ticket {
-            try self.handleResolve(inputs: &inputs, index: Int(blockInput.index), objectsToResolve: &objectsToResolve)
-        }
-    }
-}
-
-extension SuiTransactionInner{
-    public func encodeInput(inputs: inout [SuiTransactionBlockInput]?, objectsToResolve: inout [SuiObjectsToResolve]) throws{
-        switch self {
-        case .MoveCall(let suiMoveCallTransaction):
-            try suiMoveCallTransaction.encodeInput(inputs: &inputs, objectsToResolve: &objectsToResolve)
-        case .TransferObjects(let suiTransferObjectsTransaction):
-            try suiTransferObjectsTransaction.encodeInput(inputs: &inputs, objectsToResolve: &objectsToResolve)
-        case .SplitCoins(let suiSplitCoinsTransaction):
-            try suiSplitCoinsTransaction.encodeInput(inputs: &inputs, objectsToResolve: &objectsToResolve)
-        case .MergeCoins(let suiMergeCoinsTransaction):
-            try suiMergeCoinsTransaction.encodeInput(inputs: &inputs, objectsToResolve: &objectsToResolve)
-        case .Publish(let suiPublishTransaction):
-            try suiPublishTransaction.encodeInput(inputs: &inputs, objectsToResolve: &objectsToResolve)
-        case .MakeMoveVec(let suiMakeMoveVecTransaction):
-            try suiMakeMoveVecTransaction.encodeInput(inputs: &inputs, objectsToResolve: &objectsToResolve)
-        case .Upgrade(let suiUpgradeTransaction):
-            try suiUpgradeTransaction.encodeInput(inputs: &inputs, objectsToResolve: &objectsToResolve)
+        default:
+            var data = Data()
+            try SuiInputs.PureWithJsonValue(value: value, data: &data)
+            inputs?[Int(input.index)].value = SuiJsonValue.CallArg(.Pure(data.bytes))
         }
     }
 }
@@ -334,22 +227,22 @@ extension SuiTransactionBuilder{
                     try str.serialize(to: &data)
                     return data.bytes
                 }
-                if case .Array(let values) = argVal{
-                    var argsBCS = [UInt8]()
-                    for value in values {
-                        let inner = try self.getPureSerializationType(normalizedType: suiMoveNormalizedTypeVector.vector, argVal: value)
-                        if inner != nil{
-                            argsBCS.append(contentsOf: inner!)
-                            
-                        } else {return nil}
-                    }
-                    var data = Data()
-                    try argsBCS.serialize(to: &data)
-                    return data.bytes
-                    
-                } else{
-                    throw SuiError.DataSerializerError.ParseError("Expect \(argVal) to be a array")
+            }
+            if case .Array(let values) = argVal{
+                var argsBCS = [UInt8]()
+                for value in values {
+                    let inner = try self.getPureSerializationType(normalizedType: suiMoveNormalizedTypeVector.vector, argVal: value)
+                    if inner != nil{
+                        argsBCS.append(contentsOf: inner!)
+                        
+                    } else {return nil}
                 }
+                var data = Data()
+                try argsBCS.serialize(to: &data)
+                return data.bytes
+                
+            } else{
+                throw SuiError.DataSerializerError.ParseError("Expect \(argVal) to be a array")
             }
             
         case .MoveNormalizedStructType(let suiMoveNormalizedStructType):
