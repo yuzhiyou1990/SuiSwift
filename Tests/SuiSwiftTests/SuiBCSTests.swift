@@ -4,7 +4,12 @@ import BigInt
 @testable import SuiSwift
 
 final class SuiBCSTests: XCTestCase {
-    
+    func test_Make() throws{
+        let make = SuiMakeMoveVecTransaction(type: nil, objects: [.Result(.init(index: 0))])
+        var data = Data()
+        try make.serialize(to: &data)
+        XCTAssertTrue(data.toHexString() == "0001020000")
+    }
     func test_amount() throws{
         let base64 = "AAACAAgAypo7AAAAAAAg1xxhpppIXi/UT1E1wBjOi6oehtvEYZmmmRNL9MmnFpUCAgABAQAAAQECAAABAQA6ytrySLGemWJtSlBkI88HPUNVeI6C3it+mtmKz01tJwEciCH16516T0ATrsNebS5Mi+h2cgdaCew4NFcZiE3ISWg25AAAAAAAICiwUpfCExvnSZPA8XQN1/OsXWdwSzzd8YOtnlvwaa2yOsra8kixnplibUpQZCPPBz1DVXiOgt4rfprZis9NbSfoAwAAAAAAABCQLQAAAAAAAA=="
         var reader = BinaryReader(bytes: Array(base64: base64))
