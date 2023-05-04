@@ -39,6 +39,33 @@ public struct SuiInputs{
         return .Pure(data.bytes)
     }
     
+    public static func PureWithJsonValue(value: SuiJsonValue, data: inout Data) throws {
+        switch value {
+        case .Boolean(let bool):
+            try Pure(value: bool, data: &data)
+        case .Number(let uInt64):
+            try Pure(value: uInt64, data: &data)
+        case .Str(let string):
+            if let address = try? SuiAddress(value: string){
+                try Pure(value: address, data: &data)
+            } else if Int(string) != nil{
+                try Pure(value: UInt64(string)!, data: &data)
+            } else {
+                try Pure(value: string, data: &data)
+            }
+        case .CallArg(_):
+            break
+        case .Array(let array):
+           try array.forEach { jsonValue in
+                try PureWithJsonValue(value: jsonValue, data: &data)
+            }
+        }
+    }
+    
+    public static func Pure<T>(value: T, data: inout Data) throws where T: BorshCodable{
+        try value.serialize(to: &data)
+    }
+    
     public static func getIdFromCallArg(arg: Any) -> String? {
         if let _arg = arg as? String{
             return SuiAddress.normalizeSuiAddress(address: _arg)

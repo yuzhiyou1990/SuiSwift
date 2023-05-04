@@ -56,27 +56,6 @@ public enum SuiTransactionInner{
     case MakeMoveVec(SuiMakeMoveVecTransaction)
     case Upgrade(SuiUpgradeTransaction)
 }
-
-extension SuiTransactionInner{
-    public static func transactionType(dic: [String: Any]) throws -> SuiTransactionInner{
-        guard let kind = dic["kind"] as? String else{
-            throw SuiError.BuildTransactionError.ConstructTransactionDataError("Invalid kind")
-        }
-        guard let transaction = SuiTransactionInner.transactionType()[kind] else{
-            throw SuiError.BuildTransactionError.ConstructTransactionDataError("Invalid Transaction Type")
-        }
-        return try transaction.getTransaction(dic: dic)
-    }
-    public static func transactionType() -> [String: SuiTransactionStruct.Type]{
-        return [SuiMoveCallTransaction.kind: SuiMoveCallTransaction.self,
-                SuiTransferObjectsTransaction.kind: SuiTransferObjectsTransaction.self,
-                SuiSplitCoinsTransaction.kind: SuiSplitCoinsTransaction.self,
-                SuiMergeCoinsTransaction.kind: SuiMergeCoinsTransaction.self,
-                SuiMakeMoveVecTransaction.kind: SuiMakeMoveVecTransaction.self,
-                SuiPublishTransaction.kind: SuiPublishTransaction.self,
-                SuiUpgradeTransaction.kind: SuiUpgradeTransaction.self]
-    }
-}
 public struct SuiProgrammableTransaction{
     public let inputs: [SuiCallArg]
     public let transactions: [SuiTransactionInner]
@@ -102,6 +81,7 @@ public enum SuiTransactionData{
 // transaction
 public struct SuiGasCoinArgumentType{
     public static let kind: String = "GasCoin"
+    public init(){}
 }
 public struct SuiTransactionBlockInput{
     public static let kind: String = "Input"
@@ -113,36 +93,22 @@ public struct SuiTransactionBlockInput{
         self.value = value
         self.type = type
     }
-    public static func input(dic: [String: Any]) throws -> SuiTransactionBlockInput{
-        guard let index = dic["index"] as? UInt,
-              let type = dic["type"] as? String else{
-            throw SuiError.BuildTransactionError.ConstructTransactionDataError("Invalid SuiTransactionBlockInput ArgumentType")
-        }
-        if type == "object"{
-            guard let objectid = dic["value"] as? String else{
-                throw SuiError.BuildTransactionError.ConstructTransactionDataError("Invalid SuiTransactionBlockInput Object")
-            }
-            return SuiTransactionBlockInput(index: UInt16(index), value: .Str(objectid), type: type)
-        }
-        if type == "pure" {
-            if let value = dic["value"] as? String {
-                return SuiTransactionBlockInput(index: UInt16(index), value: .Str(value), type: type)
-            }
-            if let value = dic["value"] as? UInt64 {
-                return SuiTransactionBlockInput(index: UInt16(index), value: .Str("\(value)"), type: type)
-            }
-        }
-        throw SuiError.BuildTransactionError.ConstructTransactionDataError("Invalid SuiTransactionBlockInput")
-    }
 }
 public struct SuiResultArgumentType{
     public static let kind: String = "Result"
     public let index: UInt16
+    public init(index: UInt16) {
+        self.index = index
+    }
 }
 public struct SuiNestedResultArgumentType{
     public static let kind: String = "NestedResult"
     public let index: UInt16
     public let resultIndex: UInt16
+    public init(index: UInt16, resultIndex: UInt16) {
+        self.index = index
+        self.resultIndex = resultIndex
+    }
 }
 
 public enum SuiTransactionArgumentType{
@@ -152,30 +118,6 @@ public enum SuiTransactionArgumentType{
     case NestedResult(SuiNestedResultArgumentType)
 }
 
-extension SuiTransactionArgumentType{
-    public static func type(dic: [String: Any]) throws -> SuiTransactionArgumentType{
-        guard let kind = dic["kind"] as? String else{
-            throw SuiError.BuildTransactionError.ConstructTransactionDataError("Invalid ArgumentType")
-        }
-        switch kind{
-        case SuiGasCoinArgumentType.kind:
-            return .GasCoin(SuiGasCoinArgumentType())
-        case SuiResultArgumentType.kind:
-            guard let index = dic["index"] as? UInt else{
-                throw SuiError.BuildTransactionError.ConstructTransactionDataError("Invalid ArgumentType")
-            }
-            return .Result(SuiResultArgumentType(index: UInt16(exactly: index)!))
-        case SuiNestedResultArgumentType.kind:
-            guard let index = dic["index"] as? UInt,
-                  let resultIndex = dic["resultIndex"] as? UInt else{
-                throw SuiError.BuildTransactionError.ConstructTransactionDataError("Invalid ArgumentType")
-            }
-            return .NestedResult(SuiNestedResultArgumentType(index: UInt16(exactly: index)!, resultIndex: UInt16(exactly: resultIndex)!))
-        default:
-            return .TransactionBlockInput(try SuiTransactionBlockInput.input(dic: dic))
-        }
-    }
-}
 public struct SuiPureTransactionArgument{
     public let kind: String = "pure"
     public let type: String
@@ -188,7 +130,6 @@ public struct SuiPureTransactionArgument{
 public protocol SuiTransactionStruct{
     func encodeInput(inputs: inout [SuiTransactionBlockInput]?, objectsToResolve: inout [SuiObjectsToResolve]) throws
     func inner() -> SuiTransactionInner
-    static func getTransaction(dic: [String: Any]) throws -> SuiTransactionInner
 }
 
 public struct SuiProgrammableCallInner{
@@ -219,18 +160,6 @@ public struct SuiMoveCallTransaction: SuiTransactionStruct{
     public func inner() -> SuiTransactionInner {
         return .MoveCall(self)
     }
-    public static func getTransaction(dic: [String: Any]) throws -> SuiTransactionInner{
-        guard let target = dic["target"] as? String,
-              let argumentDics = dic["arguments"] as? [[String: Any]] else{
-            throw SuiError.BuildTransactionError.ConstructTransactionDataError("Invalid Target")
-        }
-        let arguments = try argumentDics.map { dic in
-            return try SuiTransactionArgumentType.type(dic: dic)
-        }
-        let typeArguments = dic["typeArguments"] as? [String]
-        let transaction = SuiMoveCallTransaction(target: target, typeArguments: typeArguments, arguments: arguments)
-        return .MoveCall(transaction)
-    }
 }
 
 public struct SuiTransferObjectsTransaction: SuiTransactionStruct{
@@ -243,18 +172,6 @@ public struct SuiTransferObjectsTransaction: SuiTransactionStruct{
     }
     public func inner() -> SuiTransactionInner {
         return .TransferObjects(self)
-    }
-    public static func getTransaction(dic: [String: Any]) throws -> SuiTransactionInner{
-        guard let objectsDics = dic["objects"] as? [[String: Any]],
-              let addressDic = dic["address"] as? [String: Any] else{
-            throw SuiError.BuildTransactionError.ConstructTransactionDataError("Invalid objects")
-        }
-        let objects = try objectsDics.map { dic in
-            return try SuiTransactionArgumentType.type(dic: dic)
-        }
-        let address = try SuiTransactionArgumentType.type(dic: addressDic)
-        let transaction = SuiTransferObjectsTransaction(objects: objects, address: address)
-        return .TransferObjects(transaction)
     }
 }
 
@@ -269,18 +186,6 @@ public struct SuiSplitCoinsTransaction: SuiTransactionStruct{
     public func inner() -> SuiTransactionInner {
         return .SplitCoins(self)
     }
-    public static func getTransaction(dic: [String: Any]) throws -> SuiTransactionInner{
-        guard let amountsDics = dic["amounts"] as? [[String: Any]],
-              let coinDic = dic["coin"] as? [String: Any] else{
-            throw SuiError.BuildTransactionError.ConstructTransactionDataError("Invalid SplitCoins Type")
-        }
-        let amounts = try amountsDics.map { dic in
-            return try SuiTransactionArgumentType.type(dic: dic)
-        }
-        let coin = try SuiTransactionArgumentType.type(dic: coinDic)
-        let transaction = SuiSplitCoinsTransaction(coin: coin, amounts: amounts)
-        return .SplitCoins(transaction)
-    }
 }
 
 public struct SuiMergeCoinsTransaction: SuiTransactionStruct{
@@ -293,18 +198,6 @@ public struct SuiMergeCoinsTransaction: SuiTransactionStruct{
     }
     public func inner() -> SuiTransactionInner {
         return .MergeCoins(self)
-    }
-    public static func getTransaction(dic: [String: Any]) throws -> SuiTransactionInner{
-        guard let sourcesDics = dic["sources"] as? [[String: Any]],
-              let destinationDic = dic["destination"] as? [String: Any] else{
-            throw SuiError.BuildTransactionError.ConstructTransactionDataError("Invalid MergeCoins Type")
-        }
-        let sources = try sourcesDics.map { dic in
-            return try SuiTransactionArgumentType.type(dic: dic)
-        }
-        let destination = try SuiTransactionArgumentType.type(dic: destinationDic)
-        let transaction = SuiMergeCoinsTransaction(destination: destination, sources: sources)
-        return .MergeCoins(transaction)
     }
 }
 
@@ -319,15 +212,6 @@ public struct SuiMakeMoveVecTransaction: SuiTransactionStruct{
     public func inner() -> SuiTransactionInner {
         return .MakeMoveVec(self)
     }
-    public static func getTransaction(dic: [String: Any]) throws -> SuiTransactionInner{
-        guard let objectsDics = dic["objects"] as? [[String: Any]]  else{
-            throw SuiError.BuildTransactionError.ConstructTransactionDataError("Invalid MakeMove Type")
-        }
-        let objects = try objectsDics.map { dic in
-            return try SuiTransactionArgumentType.type(dic: dic)
-        }
-        return .MakeMoveVec(.init(type: nil, objects: objects))
-    }
 }
 
 public struct SuiPublishTransaction: SuiTransactionStruct{
@@ -340,9 +224,6 @@ public struct SuiPublishTransaction: SuiTransactionStruct{
     }
     public func inner() -> SuiTransactionInner {
         return .Publish(self)
-    }
-    public static func getTransaction(dic: [String: Any]) throws -> SuiTransactionInner{
-        return .Publish(.init(modules: [], dependencies: []))
     }
 }
 
@@ -361,7 +242,97 @@ public struct SuiUpgradeTransaction: SuiTransactionStruct{
     public func inner() -> SuiTransactionInner {
         return .Upgrade(self)
     }
-    public static func getTransaction(dic: [String: Any]) throws -> SuiTransactionInner{
-        return .Upgrade(.init(modules: [], dependencies: [], packageId: try SuiAddress(value: ""), ticket: .GasCoin(.init())))
+}
+
+// encode inputs
+extension SuiMoveCallTransaction{
+    public func encodeInput(inputs: inout [SuiTransactionBlockInput]?, objectsToResolve: inout [SuiObjectsToResolve]) throws {
+       try self.arguments.forEach { transactionArgumentType in
+            if case .TransactionBlockInput(let blockInput) =  transactionArgumentType {
+                try self.handleResolve(inputs: &inputs, index: Int(blockInput.index), objectsToResolve: &objectsToResolve)
+            }
+        }
+    }
+}
+
+extension SuiTransferObjectsTransaction{
+    public func encodeInput(inputs: inout [SuiTransactionBlockInput]?, objectsToResolve: inout [SuiObjectsToResolve]) throws {
+        try self.objects.forEach { transactionArgumentType in
+            if case .TransactionBlockInput(let blockInput) =  transactionArgumentType {
+                try self.handleResolve(inputs: &inputs, index: Int(blockInput.index), objectsToResolve: &objectsToResolve)
+            }
+        }
+        if case .TransactionBlockInput(let blockInput) =  self.address {
+            try self.handleResolve(inputs: &inputs, index: Int(blockInput.index), objectsToResolve: &objectsToResolve)
+        }
+    }
+}
+
+extension SuiSplitCoinsTransaction{
+    public func encodeInput(inputs: inout [SuiTransactionBlockInput]?, objectsToResolve: inout [SuiObjectsToResolve]) throws {
+        if case .TransactionBlockInput(let blockInput) =  self.coin {
+            try self.handleResolve(inputs: &inputs, index: Int(blockInput.index), objectsToResolve: &objectsToResolve)
+        }
+        try self.amounts.forEach { transactionArgumentType in
+            if case .TransactionBlockInput(let blockInput) =  transactionArgumentType {
+                try self.handleResolve(inputs: &inputs, index: Int(blockInput.index), objectsToResolve: &objectsToResolve)
+            }
+        }
+    }
+}
+extension SuiMergeCoinsTransaction{
+    public func encodeInput(inputs: inout [SuiTransactionBlockInput]?, objectsToResolve: inout [SuiObjectsToResolve]) throws {
+        if case .TransactionBlockInput(let blockInput) =  self.destination {
+            try self.handleResolve(inputs: &inputs, index: Int(blockInput.index), objectsToResolve: &objectsToResolve)
+        }
+        try self.sources.forEach { transactionArgumentType in
+            if case .TransactionBlockInput(let blockInput) =  transactionArgumentType {
+                try self.handleResolve(inputs: &inputs, index: Int(blockInput.index), objectsToResolve: &objectsToResolve)
+            }
+        }
+    }
+}
+extension SuiMakeMoveVecTransaction{
+    public func encodeInput(inputs: inout [SuiTransactionBlockInput]?, objectsToResolve: inout [SuiObjectsToResolve]) throws{
+        try self.objects.forEach { transactionArgumentType in
+            if case .TransactionBlockInput(let blockInput) =  transactionArgumentType {
+                try self.handleResolve(inputs: &inputs, index: Int(blockInput.index), objectsToResolve: &objectsToResolve)
+            }
+        }
+    }
+}
+
+extension SuiPublishTransaction{
+    public func encodeInput(inputs: inout [SuiTransactionBlockInput]?, objectsToResolve: inout [SuiObjectsToResolve]) throws{
+        debugPrint("kind !== 'Input'")
+    }
+}
+
+extension SuiUpgradeTransaction{
+    public func encodeInput(inputs: inout [SuiTransactionBlockInput]?, objectsToResolve: inout [SuiObjectsToResolve]) throws{
+        if case .TransactionBlockInput(let blockInput) =  self.ticket {
+            try self.handleResolve(inputs: &inputs, index: Int(blockInput.index), objectsToResolve: &objectsToResolve)
+        }
+    }
+}
+
+extension SuiTransactionInner{
+    public func encodeInput(inputs: inout [SuiTransactionBlockInput]?, objectsToResolve: inout [SuiObjectsToResolve]) throws{
+        switch self {
+        case .MoveCall(let suiMoveCallTransaction):
+            try suiMoveCallTransaction.encodeInput(inputs: &inputs, objectsToResolve: &objectsToResolve)
+        case .TransferObjects(let suiTransferObjectsTransaction):
+            try suiTransferObjectsTransaction.encodeInput(inputs: &inputs, objectsToResolve: &objectsToResolve)
+        case .SplitCoins(let suiSplitCoinsTransaction):
+            try suiSplitCoinsTransaction.encodeInput(inputs: &inputs, objectsToResolve: &objectsToResolve)
+        case .MergeCoins(let suiMergeCoinsTransaction):
+            try suiMergeCoinsTransaction.encodeInput(inputs: &inputs, objectsToResolve: &objectsToResolve)
+        case .Publish(let suiPublishTransaction):
+            try suiPublishTransaction.encodeInput(inputs: &inputs, objectsToResolve: &objectsToResolve)
+        case .MakeMoveVec(let suiMakeMoveVecTransaction):
+            try suiMakeMoveVecTransaction.encodeInput(inputs: &inputs, objectsToResolve: &objectsToResolve)
+        case .Upgrade(let suiUpgradeTransaction):
+            try suiUpgradeTransaction.encodeInput(inputs: &inputs, objectsToResolve: &objectsToResolve)
+        }
     }
 }

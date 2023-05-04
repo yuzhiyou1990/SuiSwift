@@ -204,20 +204,35 @@ extension SuiTypeTag{
             }
             return value
         } else if type == "u8" {
-            return nil
+            guard let value = arg.value() as? UInt64 else{
+                return nil
+            }
+            return value
         } else if type == "u16" {
-            return nil
+            guard let value = arg.value() as? UInt64 else{
+                return nil
+            }
+            return value
         } else if type == "u32" {
-            return nil
+            guard let value = arg.value() as? UInt64 else{
+                return nil
+            }
+            return value
         } else if type == "u64" {
             guard let value = arg.value() as? String else{
                 return nil
             }
             return Int64("\(value)")?.unsigned
         } else if type == "u128" {
-            return nil
+            guard let value = arg.value() as? UInt64 else{
+                return nil
+            }
+            return value
         } else if type == "u256" {
-            return nil
+            guard let value = arg.value() as? UInt64 else{
+                return nil
+            }
+            return value
         }
         return nil
     }
