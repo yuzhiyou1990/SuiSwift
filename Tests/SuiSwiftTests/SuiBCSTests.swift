@@ -5,6 +5,7 @@ import BigInt
 
 final class SuiBCSTests: XCTestCase {
     func test_Make() throws{
+        let address = SuiAddress.normalizeSuiAddress(address: "0x2be8c4a1a3cea4d3255d870d367c87838a8cc2bfe4f216a6b67b153027087a7")
         let make = SuiMakeMoveVecTransaction(type: nil, objects: [.Result(.init(index: 0))])
         var data = Data()
         try make.serialize(to: &data)

@@ -24,12 +24,11 @@ public struct SuiAddress: Codable{
     }
     
     public static func normalizeSuiAddress(address: String) -> String{
-        if  address.stripHexPrefix().count != ADDRESS_SIZE{
-            let padding_address = String(format: "%064X", Int(address.stripHexPrefix(), radix: 16)!)
-            let address = padding_address.lowercased()
-            return address
+        var str = address.stripHexPrefix()
+        while str.count < ADDRESS_SIZE {
+            str = "0" + str
         }
-        return address.lowercased()
+        return str.lowercased()
     }
 }
 
