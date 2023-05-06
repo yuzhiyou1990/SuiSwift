@@ -259,7 +259,7 @@ extension SuiTransactionData: BorshCodable{
 
 extension SuiProgrammableCallInner: BorshCodable{
     public func serialize(to writer: inout Data) throws {
-        try SuiAddress(value: package).serialize(to: &writer)
+        try SuiAddress(value: SuiAddress.normalizeSuiAddress(address: package)).serialize(to: &writer)
         try module.serialize(to: &writer)
         try function.serialize(to: &writer)
         if let typeArguments = typeArguments {
