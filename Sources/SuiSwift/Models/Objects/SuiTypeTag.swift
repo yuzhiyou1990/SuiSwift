@@ -204,35 +204,48 @@ extension SuiTypeTag{
             }
             return value
         } else if type == "u8" {
-            guard let value = arg.value() as? UInt64 else{
-                return nil
+            if let value = arg.value() as? String {
+                return Swift.UInt8(value) ?? 0
             }
-            return value
+            if let value = arg.value() as? UInt8 {
+                return value
+            }
         } else if type == "u16" {
-            guard let value = arg.value() as? UInt64 else{
-                return nil
+            if let value = arg.value() as? String {
+                return Swift.UInt16(value) ?? 0
             }
-            return value
+            if let value = arg.value() as? UInt16 {
+                return value
+            }
         } else if type == "u32" {
-            guard let value = arg.value() as? UInt64 else{
-                return nil
+            if let value = arg.value() as? String {
+                return Swift.UInt32(value) ?? 0
             }
-            return value
+            if let value = arg.value() as? UInt32 {
+                return value
+            }
         } else if type == "u64" {
-            guard let value = arg.value() as? String else{
-                return nil
+            if let value = arg.value() as? String {
+                return Swift.UInt64(value) ?? 0
             }
-            return Int64("\(value)")?.unsigned
+            if let value = arg.value() as? UInt64 {
+                return value
+            }
+            
         } else if type == "u128" {
-            guard let value = arg.value() as? UInt64 else{
-                return nil
+            if let value = arg.value() as? String {
+                return Swift.UInt64(value) ?? 0
             }
-            return value
+            if let value = arg.value() as? UInt64 {
+                return value
+            }
         } else if type == "u256" {
-            guard let value = arg.value() as? UInt64 else{
-                return nil
+            if let value = arg.value() as? String {
+                return Swift.UInt64(value) ?? 0
             }
-            return value
+            if let value = arg.value() as? UInt64 {
+                return value
+            }
         }
         return nil
     }
