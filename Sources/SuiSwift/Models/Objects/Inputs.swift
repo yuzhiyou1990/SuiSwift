@@ -70,6 +70,18 @@ public struct SuiInputs{
         if let _arg = arg as? String{
             return SuiAddress.normalizeSuiAddress(address: _arg)
         }
+        if let _json = arg as? SuiJsonValue{
+            if case .CallArg(let _arg) = _json{
+                if case .Object(let objArg) = _arg {
+                    if case .ImmOrOwned(let objRef) = objArg{
+                        return objRef.objectId.value
+                    }
+                    if case .Shared(let objRef) = objArg {
+                        return objRef.objectId.value
+                    }
+                }
+            }
+        }
         if let _arg = arg as? SuiCallArg{
             if case .Object(let objArg) = _arg {
                 if case .ImmOrOwned(let objRef) = objArg{
