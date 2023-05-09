@@ -10,29 +10,29 @@ import Foundation
  * Sui TypeTag object. A decoupled `0x...::module::Type<???>` parameter.
  */
 public indirect enum SuiTypeTag{
-    case Bool
-    case UInt8
-    case UInt64
-    case UInt128
+    case ASBool
+    case ASUInt8
+    case ASUInt64
+    case ASUInt128
     case Address
     case Signer
     case Vector(SuiTypeTag)
     case Struct(SuiStructTag)
-    case UInt16
-    case UInt32
-    case UInt256
+    case ASUInt16
+    case ASUInt32
+    case ASUInt256
 }
 extension SuiTypeTag: BorshCodable{
     
     public func serialize(to writer: inout Data) throws {
         switch self {
-        case .Bool:
+        case .ASBool:
             try UVarInt(0).serialize(to: &writer)
-        case .UInt8:
+        case .ASUInt8:
             try UVarInt(1).serialize(to: &writer)
-        case .UInt64:
+        case .ASUInt64:
             try UVarInt(2).serialize(to: &writer)
-        case .UInt128:
+        case .ASUInt128:
             try UVarInt(3).serialize(to: &writer)
         case .Address:
             try UVarInt(4).serialize(to: &writer)
@@ -44,11 +44,11 @@ extension SuiTypeTag: BorshCodable{
         case .Struct(let suiStructTag):
             try UVarInt(7).serialize(to: &writer)
             try suiStructTag.serialize(to: &writer)
-        case .UInt16:
+        case .ASUInt16:
             try UVarInt(8).serialize(to: &writer)
-        case .UInt32:
+        case .ASUInt32:
             try UVarInt(9).serialize(to: &writer)
-        case .UInt256:
+        case .ASUInt256:
             try UVarInt(10).serialize(to: &writer)
         }
     }
@@ -57,13 +57,13 @@ extension SuiTypeTag: BorshCodable{
         let index = try UVarInt.init(from: &reader).value
         switch index {
         case 0:
-            self = .Bool
+            self = .ASBool
         case 1:
-            self = .UInt8
+            self = .ASUInt8
         case 2:
-            self = .UInt64
+            self = .ASUInt64
         case 3:
-            self = .UInt128
+            self = .ASUInt128
         case 4:
             self = .Address
         case 5:
@@ -73,11 +73,11 @@ extension SuiTypeTag: BorshCodable{
         case 7:
             self = .Struct(try SuiStructTag(from: &reader))
         case 8:
-            self = .UInt16
+            self = .ASUInt16
         case 9:
-            self = .UInt32
+            self = .ASUInt32
         case 10:
-            self = .UInt256
+            self = .ASUInt256
         default:
             throw SuiError.BCSError.DeserializeError("Unknown variant index for SuiTypeTag: \(index)")
         }
@@ -88,19 +88,19 @@ extension SuiTypeTag{
         if str == "address" {
             return .Address
         } else if str == "bool" {
-            return .Bool
+            return .ASBool
         } else if str == "u8" {
-            return .UInt8
+            return .ASUInt8
         } else if str == "u16" {
-            return .UInt16
+            return .ASUInt16
         } else if str == "u32" {
-            return .UInt32
+            return .ASUInt32
         } else if str == "u64" {
-            return .UInt64
+            return .ASUInt64
         } else if str == "u128" {
-            return .UInt128
+            return .ASUInt128
         } else if str == "u256" {
-            return .UInt256
+            return .ASUInt256
         } else if str == "signer" {
             return .Signer
         }
@@ -155,19 +155,19 @@ extension SuiTypeTag{
     
     public static func tagToString(tag: SuiTypeTag) -> String{
         switch tag{
-        case .Bool:
+        case .ASBool:
             return "bool"
-        case .UInt8:
+        case .ASUInt8:
             return "u8"
-        case .UInt16:
+        case .ASUInt16:
             return "u16"
-        case .UInt32:
+        case .ASUInt32:
             return "u32"
-        case .UInt64:
+        case .ASUInt64:
             return "u64"
-        case .UInt128:
+        case .ASUInt128:
             return "u128"
-        case .UInt256:
+        case .ASUInt256:
             return "u256"
         case .Address:
             return "address"
@@ -205,28 +205,28 @@ extension SuiTypeTag{
             return value
         } else if type == "u8" {
             if let value = arg.value() as? String {
-                return Swift.UInt8(value) ?? 0
+                return UInt8(value) ?? 0
             }
             if let value = arg.value() as? UInt8 {
                 return value
             }
         } else if type == "u16" {
             if let value = arg.value() as? String {
-                return Swift.UInt16(value) ?? 0
+                return UInt16(value) ?? 0
             }
             if let value = arg.value() as? UInt16 {
                 return value
             }
         } else if type == "u32" {
             if let value = arg.value() as? String {
-                return Swift.UInt32(value) ?? 0
+                return UInt32(value) ?? 0
             }
             if let value = arg.value() as? UInt32 {
                 return value
             }
         } else if type == "u64" {
             if let value = arg.value() as? String {
-                return Swift.UInt64(value) ?? 0
+                return UInt64(value) ?? 0
             }
             if let value = arg.value() as? UInt64 {
                 return value
@@ -234,17 +234,17 @@ extension SuiTypeTag{
             
         } else if type == "u128" {
             if let value = arg.value() as? String {
-                return Swift.UInt64(value) ?? 0
+                return UInt128(value)
             }
             if let value = arg.value() as? UInt64 {
-                return value
+                return UInt128(value)
             }
         } else if type == "u256" {
             if let value = arg.value() as? String {
-                return Swift.UInt64(value) ?? 0
+                return UVarInt(UInt64(value) ?? 0)
             }
             if let value = arg.value() as? UInt64 {
-                return value
+                return UVarInt(value)
             }
         }
         return nil

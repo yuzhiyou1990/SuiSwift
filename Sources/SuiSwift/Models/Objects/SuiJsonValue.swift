@@ -54,22 +54,22 @@ extension SuiJsonValue{
    }
    public func encode(type: SuiTypeTag, to writer: inout Data) throws{
        switch type {
-       case .Bool:
+       case .ASBool:
            guard let booValue = value() as? Bool else{
                throw SuiError.DataSerializerError.ParseError("Serialize SuiJsonValue Error, suiTypeTag: \(type)")
            }
            try booValue.serialize(to: &writer)
-       case .UInt8:
+       case .ASUInt8:
            guard let number = value() as? String else{
                throw SuiError.DataSerializerError.ParseError("Serialize SuiJsonValue Error, suiTypeTag: \(type)")
            }
            try UInt8(number)!.serialize(to: &writer)
-       case .UInt64:
+       case .ASUInt64:
            guard let number = value() as? UInt64 else{
                throw SuiError.DataSerializerError.ParseError("Serialize SuiJsonValue Error, suiTypeTag: \(type)")
            }
            try number.serialize(to: &writer)
-       case .UInt128:
+       case .ASUInt128:
            guard let number = value() as? String else{
                throw SuiError.DataSerializerError.ParseError("Serialize SuiJsonValue Error, suiTypeTag: \(type)")
            }
@@ -79,17 +79,17 @@ extension SuiJsonValue{
                throw SuiError.DataSerializerError.ParseError("Serialize SuiJsonValue Error, suiTypeTag: \(type)")
            }
            try SuiAddress(value: address).serialize(to: &writer)
-       case .UInt16:
+       case .ASUInt16:
            guard let number = value() as? String else{
                throw SuiError.DataSerializerError.ParseError("Serialize SuiJsonValue Error, suiTypeTag: \(type)")
            }
            try UInt16(number)!.serialize(to: &writer)
-       case .UInt32:
+       case .ASUInt32:
            guard let number = value() as? String else{
                throw SuiError.DataSerializerError.ParseError("Serialize SuiJsonValue Error, suiTypeTag: \(type)")
            }
            try UInt32(number)!.serialize(to: &writer)
-       case .UInt256:
+       case .ASUInt256:
            guard let number = value() as? String else{
                throw SuiError.DataSerializerError.ParseError("Serialize SuiJsonValue Error, suiTypeTag: \(type)")
            }
