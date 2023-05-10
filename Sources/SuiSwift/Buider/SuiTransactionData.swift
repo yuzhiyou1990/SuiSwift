@@ -218,12 +218,12 @@ extension SuiTransactionBuilder{
     public static func getPureSerializationType(normalizedType: SuiMoveNormalizedType, argVal: SuiJsonValue) throws -> [UInt8]?{
         let allowedTypes = ["Address", "Bool", "U8", "U16", "U32", "U64", "U128", "U256"]
         switch normalizedType {
-        case .Str(let string):
-            guard allowedTypes.contains(string), let bcsValue = SuiParseTypeTag.parseArgWithType(normalizedType: string.lowercased(), jsonValue: argVal)  else{
-                throw SuiError.DataSerializerError.ParseError("unknown pure normalized type \(string)")
+        case .Str(let type):
+            guard allowedTypes.contains(type) else{
+                throw SuiError.DataSerializerError.ParseError("unknown pure normalized type \(type)")
             }
             var data = Data()
-            try bcsValue.serialize(to: &data)
+            try argVal.moveTypeEncode(type: type, to: &data)
             return data.bytes
         case .Vector(let suiMoveNormalizedTypeVector):
             if case .Str(let string) = suiMoveNormalizedTypeVector.vector, string == "U8"{

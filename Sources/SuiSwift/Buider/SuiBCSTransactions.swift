@@ -117,7 +117,6 @@ public enum SuiTransactionArgumentType{
     case Result(SuiResultArgumentType)
     case NestedResult(SuiNestedResultArgumentType)
 }
-
 public struct SuiPureTransactionArgument{
     public let kind: String = "pure"
     public let type: String
@@ -125,13 +124,6 @@ public struct SuiPureTransactionArgument{
         self.type = type
     }
 }
-
-// Transactions
-public protocol SuiTransactionStruct{
-    func encodeInput(inputs: inout [SuiTransactionBlockInput]?, objectsToResolve: inout [SuiObjectsToResolve]) throws
-    func inner() -> SuiTransactionInner
-}
-
 public struct SuiProgrammableCallInner{
     public let package: String
     public let module: String
@@ -144,103 +136,6 @@ public struct SuiProgrammableCallInner{
         self.function = function
         self.typeArguments = typeArguments
         self.arguments = arguments
-    }
-}
-
-public struct SuiMoveCallTransaction: SuiTransactionStruct{
-    public static let kind: String = "MoveCall"
-    public var target: String = ""
-    public var typeArguments: [String]?
-    public var arguments: [SuiTransactionArgumentType]
-    public init(target: String, typeArguments: [String]? = nil, arguments: [SuiTransactionArgumentType]) {
-        self.target = target
-        self.typeArguments = typeArguments
-        self.arguments = arguments
-    }
-    public func inner() -> SuiTransactionInner {
-        return .MoveCall(self)
-    }
-}
-
-public struct SuiTransferObjectsTransaction: SuiTransactionStruct{
-    public static let kind: String = "TransferObjects"
-    public let objects: [SuiTransactionArgumentType]
-    public let address: SuiTransactionArgumentType
-    public init(objects: [SuiTransactionArgumentType], address: SuiTransactionArgumentType) {
-        self.objects = objects
-        self.address = address
-    }
-    public func inner() -> SuiTransactionInner {
-        return .TransferObjects(self)
-    }
-}
-
-public struct SuiSplitCoinsTransaction: SuiTransactionStruct{
-    public static let kind: String = "SplitCoins"
-    public let coin: SuiTransactionArgumentType
-    public let amounts: [SuiTransactionArgumentType]
-    public init(coin: SuiTransactionArgumentType, amounts: [SuiTransactionArgumentType]) {
-        self.coin = coin
-        self.amounts = amounts
-    }
-    public func inner() -> SuiTransactionInner {
-        return .SplitCoins(self)
-    }
-}
-
-public struct SuiMergeCoinsTransaction: SuiTransactionStruct{
-    public static let kind: String = "MergeCoins"
-    public let destination: SuiTransactionArgumentType
-    public let sources: [SuiTransactionArgumentType]
-    public init(destination: SuiTransactionArgumentType, sources: [SuiTransactionArgumentType]) {
-        self.destination = destination
-        self.sources = sources
-    }
-    public func inner() -> SuiTransactionInner {
-        return .MergeCoins(self)
-    }
-}
-
-public struct SuiMakeMoveVecTransaction: SuiTransactionStruct{
-    public static let kind: String = "MakeMoveVec"
-    public let type: [SuiTypeTag]?
-    public let objects: [SuiTransactionArgumentType]
-    public init(type: [SuiTypeTag]?, objects: [SuiTransactionArgumentType]) {
-        self.type = type
-        self.objects = objects
-    }
-    public func inner() -> SuiTransactionInner {
-        return .MakeMoveVec(self)
-    }
-}
-
-public struct SuiPublishTransaction: SuiTransactionStruct{
-    public static let kind: String = "Publish"
-    public let modules: [[UInt8]]
-    public let dependencies: [SuiAddress]
-    public init(modules: [[UInt8]], dependencies: [SuiAddress]) {
-        self.modules = modules
-        self.dependencies = dependencies
-    }
-    public func inner() -> SuiTransactionInner {
-        return .Publish(self)
-    }
-}
-
-public struct SuiUpgradeTransaction: SuiTransactionStruct{
-    public static let kind: String = "Upgrade"
-    public let modules: [[UInt8]]
-    public let dependencies: [SuiAddress]
-    public let packageId: SuiAddress
-    public let ticket: SuiTransactionArgumentType
-    public init(modules: [[UInt8]], dependencies: [SuiAddress], packageId: SuiAddress, ticket: SuiTransactionArgumentType) {
-        self.modules = modules
-        self.dependencies = dependencies
-        self.packageId = packageId
-        self.ticket = ticket
-    }
-    public func inner() -> SuiTransactionInner {
-        return .Upgrade(self)
     }
 }
 

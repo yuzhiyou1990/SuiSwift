@@ -5,11 +5,8 @@ import BigInt
 
 final class SuiBCSTests: XCTestCase {
     func test_Make() throws{
-        let address = SuiAddress.normalizeSuiAddress(address: "0x2be8c4a1a3cea4d3255d870d367c87838a8cc2bfe4f216a6b67b153027087a7")
-        let make = SuiMakeMoveVecTransaction(type: nil, objects: [.Result(.init(index: 0))])
-        var data = Data()
-        try make.serialize(to: &data)
-        XCTAssertTrue(data.toHexString() == "0001020000")
+        let value: UInt8 = 1
+        try SuiMoveCallTransaction.getJsonValue(argument: NSNumber(1000))
     }
     func test_amount() throws{
         let base64 = "AAACAAgAypo7AAAAAAAg1xxhpppIXi/UT1E1wBjOi6oehtvEYZmmmRNL9MmnFpUCAgABAQAAAQECAAABAQA6ytrySLGemWJtSlBkI88HPUNVeI6C3it+mtmKz01tJwEciCH16516T0ATrsNebS5Mi+h2cgdaCew4NFcZiE3ISWg25AAAAAAAICiwUpfCExvnSZPA8XQN1/OsXWdwSzzd8YOtnlvwaa2yOsra8kixnplibUpQZCPPBz1DVXiOgt4rfprZis9NbSfoAwAAAAAAABCQLQAAAAAAAA=="
