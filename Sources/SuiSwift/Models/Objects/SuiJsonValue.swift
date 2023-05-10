@@ -9,7 +9,7 @@ import Foundation
 
 public enum SuiJsonValue{
     case Boolean(Bool)
-    case Number(UInt64)
+    case Number(String)
     case Str(String)
     case CallArg(SuiCallArg)
     case Array([SuiJsonValue])
@@ -52,76 +52,44 @@ extension SuiJsonValue{
            return array as AnyObject
        }
    }
-   public func encode(type: SuiTypeTag, to writer: inout Data) throws{
+   public func moveTypeEncode(type: String, to writer: inout Data) throws{
        switch type {
-       case .Bool:
+       case "Bool":
            guard let booValue = value() as? Bool else{
                throw SuiError.DataSerializerError.ParseError("Serialize SuiJsonValue Error, suiTypeTag: \(type)")
            }
            try booValue.serialize(to: &writer)
-       case .UInt8:
-           guard let number = value() as? String else{
-               throw SuiError.DataSerializerError.ParseError("Serialize SuiJsonValue Error, suiTypeTag: \(type)")
+       case "U8":
+           if let number = value() as? String{
+               try UInt8(number)?.serialize(to: &writer)
            }
-           try UInt8(number)!.serialize(to: &writer)
-       case .UInt64:
-           guard let number = value() as? UInt64 else{
-               throw SuiError.DataSerializerError.ParseError("Serialize SuiJsonValue Error, suiTypeTag: \(type)")
+       case "U64":
+           if let number = value() as? String{
+               try UInt64(number)?.serialize(to: &writer)
            }
-           try number.serialize(to: &writer)
-       case .UInt128:
-           guard let number = value() as? String else{
-               throw SuiError.DataSerializerError.ParseError("Serialize SuiJsonValue Error, suiTypeTag: \(type)")
+       case "U128":
+           if let number = value() as? String{
+               try UInt128(number)?.serialize(to: &writer)
            }
-           try UInt128(number)!.serialize(to: &writer)
-       case .Address:
+       case "Address":
            guard let address = value() as? String else{
                throw SuiError.DataSerializerError.ParseError("Serialize SuiJsonValue Error, suiTypeTag: \(type)")
            }
            try SuiAddress(value: address).serialize(to: &writer)
-       case .UInt16:
-           guard let number = value() as? String else{
-               throw SuiError.DataSerializerError.ParseError("Serialize SuiJsonValue Error, suiTypeTag: \(type)")
+       case "U16":
+           if let number = value() as? String{
+               try UInt16(number)?.serialize(to: &writer)
            }
-           try UInt16(number)!.serialize(to: &writer)
-       case .UInt32:
-           guard let number = value() as? String else{
-               throw SuiError.DataSerializerError.ParseError("Serialize SuiJsonValue Error, suiTypeTag: \(type)")
+       case "U32":
+           if let number = value() as? String{
+               try UInt32(number)?.serialize(to: &writer)
            }
-           try UInt32(number)!.serialize(to: &writer)
-       case .UInt256:
-           guard let number = value() as? String else{
-               throw SuiError.DataSerializerError.ParseError("Serialize SuiJsonValue Error, suiTypeTag: \(type)")
+       case "U256":
+           if let number = value() as? String{
+               try UInt256(number)?.serialize(to: &writer)
            }
-           try UInt256(number)!.serialize(to: &writer)
        default:
            break
        }
    }
-}
-
-extension Int64 {
-    var unsigned: UInt64 {
-        let valuePointer = UnsafeMutablePointer<Int64>.allocate(capacity: 1)
-        defer {
-            valuePointer.deallocate()
-        }
-
-        valuePointer.pointee = self
-
-        return valuePointer.withMemoryRebound(to: UInt64.self, capacity: 1) { $0.pointee }
-    }
-}
-
-extension UInt64 {
-    var signed: Int64 {
-        let valuePointer = UnsafeMutablePointer<UInt64>.allocate(capacity: 1)
-        defer {
-            valuePointer.deallocate()
-        }
-
-        valuePointer.pointee = self
-
-        return valuePointer.withMemoryRebound(to: Int64.self, capacity: 1) { $0.pointee }
-    }
 }
