@@ -57,14 +57,14 @@ public struct SuiParseTypeTag{
                 return UInt128(value)
             }
         }
-//        else if type == "u256" {
-//            if let value = arg.value() as? String {
-//                return UInt256(1)
-//            }
-//            if let value = arg.value() as? UInt64 {
-//                return UInt256(1)
-//            }
-//        }
+        else if type == "u256" {
+            if let value = arg.value() as? String {
+                return UInt256(value)
+            }
+            if let value = arg.value() as? UInt64 {
+                return UInt256(value)
+            }
+        }
         return nil
     }
 }
