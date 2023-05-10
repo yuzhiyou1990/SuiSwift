@@ -219,7 +219,7 @@ extension SuiTransactionBuilder{
         let allowedTypes = ["Address", "Bool", "U8", "U16", "U32", "U64", "U128", "U256"]
         switch normalizedType {
         case .Str(let string):
-            guard allowedTypes.contains(string), let bcsValue = SuiTypeTag.parseArgWithType(normalizedType: string.lowercased(), jsonValue: argVal)  else{
+            guard allowedTypes.contains(string), let bcsValue = SuiParseTypeTag.parseArgWithType(normalizedType: string.lowercased(), jsonValue: argVal)  else{
                 throw SuiError.DataSerializerError.ParseError("unknown pure normalized type \(string)")
             }
             var data = Data()
