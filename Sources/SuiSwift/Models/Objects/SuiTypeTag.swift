@@ -10,29 +10,29 @@ import Foundation
  * Sui TypeTag object. A decoupled `0x...::module::Type<???>` parameter.
  */
 public indirect enum SuiTypeTag{
-    case ASBool
-    case ASUInt8
-    case ASUInt64
-    case ASUInt128
+    case Bool
+    case UInt8
+    case UInt64
+    case UInt128
     case Address
     case Signer
     case Vector(SuiTypeTag)
     case Struct(SuiStructTag)
-    case ASUInt16
-    case ASUInt32
-    case ASUInt256
+    case UInt16
+    case UInt32
+    case UInt256
 }
 extension SuiTypeTag: BorshCodable{
     
     public func serialize(to writer: inout Data) throws {
         switch self {
-        case .ASBool:
+        case .Bool:
             try UVarInt(0).serialize(to: &writer)
-        case .ASUInt8:
+        case .UInt8:
             try UVarInt(1).serialize(to: &writer)
-        case .ASUInt64:
+        case .UInt64:
             try UVarInt(2).serialize(to: &writer)
-        case .ASUInt128:
+        case .UInt128:
             try UVarInt(3).serialize(to: &writer)
         case .Address:
             try UVarInt(4).serialize(to: &writer)
@@ -44,11 +44,11 @@ extension SuiTypeTag: BorshCodable{
         case .Struct(let suiStructTag):
             try UVarInt(7).serialize(to: &writer)
             try suiStructTag.serialize(to: &writer)
-        case .ASUInt16:
+        case .UInt16:
             try UVarInt(8).serialize(to: &writer)
-        case .ASUInt32:
+        case .UInt32:
             try UVarInt(9).serialize(to: &writer)
-        case .ASUInt256:
+        case .UInt256:
             try UVarInt(10).serialize(to: &writer)
         }
     }
@@ -57,13 +57,13 @@ extension SuiTypeTag: BorshCodable{
         let index = try UVarInt.init(from: &reader).value
         switch index {
         case 0:
-            self = .ASBool
+            self = .Bool
         case 1:
-            self = .ASUInt8
+            self = .UInt8
         case 2:
-            self = .ASUInt64
+            self = .UInt64
         case 3:
-            self = .ASUInt128
+            self = .UInt128
         case 4:
             self = .Address
         case 5:
@@ -73,11 +73,11 @@ extension SuiTypeTag: BorshCodable{
         case 7:
             self = .Struct(try SuiStructTag(from: &reader))
         case 8:
-            self = .ASUInt16
+            self = .UInt16
         case 9:
-            self = .ASUInt32
+            self = .UInt32
         case 10:
-            self = .ASUInt256
+            self = .UInt256
         default:
             throw SuiError.BCSError.DeserializeError("Unknown variant index for SuiTypeTag: \(index)")
         }
@@ -88,19 +88,19 @@ extension SuiTypeTag{
         if str == "address" {
             return .Address
         } else if str == "bool" {
-            return .ASBool
+            return .Bool
         } else if str == "u8" {
-            return .ASUInt8
+            return .UInt8
         } else if str == "u16" {
-            return .ASUInt16
+            return .UInt16
         } else if str == "u32" {
-            return .ASUInt32
+            return .UInt32
         } else if str == "u64" {
-            return .ASUInt64
+            return .UInt64
         } else if str == "u128" {
-            return .ASUInt128
+            return .UInt128
         } else if str == "u256" {
-            return .ASUInt256
+            return .UInt256
         } else if str == "signer" {
             return .Signer
         }
@@ -155,19 +155,19 @@ extension SuiTypeTag{
     
     public static func tagToString(tag: SuiTypeTag) -> String{
         switch tag{
-        case .ASBool:
+        case .Bool:
             return "bool"
-        case .ASUInt8:
+        case .UInt8:
             return "u8"
-        case .ASUInt16:
+        case .UInt16:
             return "u16"
-        case .ASUInt32:
+        case .UInt32:
             return "u32"
-        case .ASUInt64:
+        case .UInt64:
             return "u64"
-        case .ASUInt128:
+        case .UInt128:
             return "u128"
-        case .ASUInt256:
+        case .UInt256:
             return "u256"
         case .Address:
             return "address"
@@ -189,64 +189,4 @@ extension SuiTypeTag{
         }
     }
 }
-extension SuiTypeTag{
-    // normalizedType === 'string
-    public static func parseArgWithType(normalizedType type: String, jsonValue arg: SuiJsonValue) -> BorshSerializable?{
-        if type == "address" {
-            guard let value =  arg.value() as? String,
-                  let address = try? SuiAddress(value: value) else{
-                return nil
-            }
-            return address
-        } else if type == "bool" {
-            guard let value = arg.value() as? Bool else{
-                return nil
-            }
-            return value
-        } else if type == "u8" {
-            if let value = arg.value() as? String {
-                return UInt8(value) ?? 0
-            }
-            if let value = arg.value() as? UInt8 {
-                return value
-            }
-        } else if type == "u16" {
-            if let value = arg.value() as? String {
-                return UInt16(value) ?? 0
-            }
-            if let value = arg.value() as? UInt16 {
-                return value
-            }
-        } else if type == "u32" {
-            if let value = arg.value() as? String {
-                return UInt32(value) ?? 0
-            }
-            if let value = arg.value() as? UInt32 {
-                return value
-            }
-        } else if type == "u64" {
-            if let value = arg.value() as? String {
-                return UInt64(value) ?? 0
-            }
-            if let value = arg.value() as? UInt64 {
-                return value
-            }
-            
-        } else if type == "u128" {
-            if let value = arg.value() as? String {
-                return UInt128(value)
-            }
-            if let value = arg.value() as? UInt64 {
-                return UInt128(value)
-            }
-        } else if type == "u256" {
-            if let value = arg.value() as? String {
-                return UVarInt(UInt64(value) ?? 0)
-            }
-            if let value = arg.value() as? UInt64 {
-                return UVarInt(value)
-            }
-        }
-        return nil
-    }
-}
+
