@@ -6,7 +6,7 @@
 //
 
 import Foundation
-
+import BigInt
 public enum SuiJsonValue{
     case Boolean(Bool)
     case Number(String)
@@ -55,21 +55,40 @@ extension SuiJsonValue{
    public func moveTypeEncode(type: String, to writer: inout Data) throws{
        switch type {
        case "Bool":
-           guard let booValue = value() as? Bool else{
-               throw SuiError.DataSerializerError.ParseError("Serialize SuiJsonValue Error, suiTypeTag: \(type)")
+           if let booValue = value() as? Bool{
+               try booValue.serialize(to: &writer)
            }
-           try booValue.serialize(to: &writer)
+           if case .CallArg(let arg) = self{
+               if case .Pure(let bytes) = arg{
+                   writer.append(contentsOf: bytes)
+               }
+           }
        case "U8":
            if let number = value() as? String{
                try UInt8(number)?.serialize(to: &writer)
+           }
+           if case .CallArg(let arg) = self{
+               if case .Pure(let bytes) = arg{
+                   try UInt8(BigUInt(Data(bytes)).description)?.serialize(to: &writer)
+               }
            }
        case "U64":
            if let number = value() as? String{
                try UInt64(number)?.serialize(to: &writer)
            }
+           if case .CallArg(let arg) = self{
+               if case .Pure(let bytes) = arg{
+                   try UInt64(BigUInt(Data(bytes)).description)?.serialize(to: &writer)
+               }
+           }
        case "U128":
            if let number = value() as? String{
                try UInt128(number)?.serialize(to: &writer)
+           }
+           if case .CallArg(let arg) = self{
+               if case .Pure(let bytes) = arg{
+                   try UInt128(stringLiteral: BigUInt(Data(bytes)).description).serialize(to: &writer)
+               }
            }
        case "Address":
            guard let address = value() as? String else{
@@ -80,13 +99,28 @@ extension SuiJsonValue{
            if let number = value() as? String{
                try UInt16(number)?.serialize(to: &writer)
            }
+           if case .CallArg(let arg) = self{
+               if case .Pure(let bytes) = arg{
+                   try UInt16(BigUInt(Data(bytes)).description)?.serialize(to: &writer)
+               }
+           }
        case "U32":
            if let number = value() as? String{
                try UInt32(number)?.serialize(to: &writer)
            }
+           if case .CallArg(let arg) = self{
+               if case .Pure(let bytes) = arg{
+                   try UInt32(BigUInt(Data(bytes)).description)?.serialize(to: &writer)
+               }
+           }
        case "U256":
            if let number = value() as? String{
                try UInt256(number)?.serialize(to: &writer)
+           }
+           if case .CallArg(let arg) = self{
+               if case .Pure(let bytes) = arg{
+                   try UInt256(stringLiteral: BigUInt(Data(bytes)).description).serialize(to: &writer)
+               }
            }
        default:
            break
