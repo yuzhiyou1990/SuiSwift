@@ -154,7 +154,8 @@ extension SuiTransactionStruct{
             throw SuiError.BuildTransactionError.ConstructTransactionDataError("Unexpected input format.")
         }
         switch value{
-        case .CallArg(_):
+        case .CallArg(let arg):
+            inputs?[Int(input.index)].value = SuiJsonValue.CallArg(arg)
             return
         case .Str(let _str):
             if input.type == "object"{

@@ -51,8 +51,10 @@ public struct SuiInputs{
             } else {
                 try string.serialize(to: &data)
             }
-        case .CallArg(_), .Number(_):
+        case .CallArg(_):
             break
+        case .Number(let str):
+            try UInt64(str)?.serialize(to: &data)
         case .Array(let array):
            try array.forEach { jsonValue in
                 try PureWithJsonValue(value: jsonValue, data: &data)
