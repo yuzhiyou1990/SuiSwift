@@ -51,7 +51,7 @@ public struct SuiInputs{
             } else {
                 try string.serialize(to: &data)
             }
-        case .CallArg(_):
+        case .CallArg(_), .Number(_):
             break
         case .Number(let str):
             try UInt64(str)?.serialize(to: &data)
