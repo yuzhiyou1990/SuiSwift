@@ -18,7 +18,7 @@ public struct SuiMergeCoinsTransaction: SuiTransactionStruct{
     public init(destination: [String: AnyObject], sources: [[String: AnyObject]]) throws{
         self.destination = try SuiMergeCoinsTransaction.defaultType(dic: destination)
         self.sources = try sources.map({ dic in
-            try SuiMergeCoinsTransaction.defaultType(dic: destination)
+            try SuiMergeCoinsTransaction.defaultType(dic: dic)
         })
     }
     public func inner() -> SuiTransactionInner {
