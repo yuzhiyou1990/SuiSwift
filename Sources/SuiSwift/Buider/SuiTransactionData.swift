@@ -183,9 +183,6 @@ extension SuiTransactionBuilder{
         }
         for (index, param) in apiMoveParams.enumerated() {
             if case .TransactionBlockInput(let input) = originMoveArguments[index], let inputValue = inputs[Int(input.index)].value {
-                if case .CallArg(_) = inputValue {
-                    continue
-                }
                 let serType = try SuiTransactionBuilder.getPureSerializationType(normalizedType: param, argVal: inputValue)
                 if let pureType = serType.flatMap({ $0 }) {
                     self.inputs?[Int(input.index)].value = .CallArg(.Pure(pureType))
