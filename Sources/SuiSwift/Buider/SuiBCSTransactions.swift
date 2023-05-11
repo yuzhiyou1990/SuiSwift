@@ -141,13 +141,7 @@ public struct SuiProgrammableCallInner{
 
 // encode inputs
 extension SuiMoveCallTransaction{
-    public func encodeInput(inputs: inout [SuiTransactionBlockInput]?, objectsToResolve: inout [SuiObjectsToResolve]) throws {
-       try self.arguments.forEach { transactionArgumentType in
-            if case .TransactionBlockInput(let blockInput) =  transactionArgumentType {
-                try self.handleResolve(inputs: &inputs, index: Int(blockInput.index), objectsToResolve: &objectsToResolve)
-            }
-        }
-    }
+    public func encodeInput(inputs: inout [SuiTransactionBlockInput]?, objectsToResolve: inout [SuiObjectsToResolve]) throws {}
 }
 
 extension SuiTransferObjectsTransaction{
