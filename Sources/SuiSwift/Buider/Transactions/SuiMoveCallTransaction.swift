@@ -47,24 +47,51 @@ public struct SuiMoveCallTransaction: SuiTransactionStruct{
         }
     }
     public static func input(dic: [String: Any]) throws -> SuiTransactionBlockInput{
-        guard let index = dic["index"] as? UInt,
-              let type = dic["type"] as? String else{
+        guard let index = dic["index"] as? UInt else{
             throw SuiError.BuildTransactionError.ConstructTransactionDataError("Invalid SuiTransactionBlockInput ArgumentType")
         }
-        if type == "object"{
-            guard let objectid = dic["value"] as? String else{
-                throw SuiError.BuildTransactionError.ConstructTransactionDataError("Invalid SuiTransactionBlockInput Object")
+        if let type = dic["type"] as? String {
+            if type == "object"{
+                guard let value = dic["value"] as? AnyObject else{
+                    throw SuiError.BuildTransactionError.ConstructTransactionDataError("Invalid SuiTransactionBlockInput Object")
+                }
+                let jsonValue = try getObjectValue(argument: value)
+                return SuiTransactionBlockInput(index: UInt16(index), value: jsonValue, type: type)
             }
-            return SuiTransactionBlockInput(index: UInt16(index), value: .Str(objectid), type: type)
-        }
-        if type == "pure" {
-            guard let value = dic["value"] as? AnyObject else{
-                throw SuiError.BuildTransactionError.ConstructTransactionDataError("Invalid SuiTransactionBlockInput")
+            if type == "pure" {
+                guard let value = dic["value"] as? AnyObject else{
+                    throw SuiError.BuildTransactionError.ConstructTransactionDataError("Invalid SuiTransactionBlockInput")
+                }
+                let jsonValue = try getJsonValue(argument: value)
+                return SuiTransactionBlockInput(index: UInt16(index), value: jsonValue, type: type)
             }
-            let jsonValue = try getJsonValue(argument: value)
-            return SuiTransactionBlockInput(index: UInt16(index), value: jsonValue, type: type)
+            throw SuiError.BuildTransactionError.ConstructTransactionDataError("Invalid SuiTransactionBlockInput")
+        } else {
+            return SuiTransactionBlockInput(index: UInt16(index))
         }
-        throw SuiError.BuildTransactionError.ConstructTransactionDataError("Invalid SuiTransactionBlockInput")
+       
+    }
+    
+    public static func getObjectValue(argument: AnyObject) throws -> SuiJsonValue{
+        if let value = argument as? String {
+            return .Str(value)
+        } else if let value = argument as? [String: AnyObject], let object = value["Object"] as? [String: AnyObject] {
+            if let shared = object["Shared"] as? [String: AnyObject],
+               let objectId = shared["objectId"] as? String,
+               let initialSharedVersion = shared["initialSharedVersion"] as? String,
+               let number = UInt64(initialSharedVersion),
+               let mutable = shared["mutable"] as? Bool {
+                return .CallArg(.Object(.Shared(SuiSharedObjectRef(objectId: objectId, initialSharedVersion: number, mutable: mutable))))
+            }
+            if let ImmOrOwned = object["ImmOrOwned"] as? [String: AnyObject],
+               let objectId = ImmOrOwned["objectId"] as? String,
+               let version = ImmOrOwned["version"] as? String,
+               let number = UInt64(version),
+               let digest = ImmOrOwned["digest"] as? String {
+                return .CallArg(.Object(.ImmOrOwned(SuiObjectRef(digest: digest, objectId: objectId, version: number))))
+            }
+        }
+        throw SuiError.BuildTransactionError.ConstructTransactionDataError("Parse JsonValue Error")
     }
     
     public static func getJsonValue(argument: AnyObject) throws -> SuiJsonValue{

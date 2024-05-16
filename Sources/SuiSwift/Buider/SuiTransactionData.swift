@@ -189,11 +189,24 @@ extension SuiTransactionBuilder{
                     continue
                 }
                 if let _ = param.extractStructTag(){
-                    guard let value = inputValue.value() as? String else {
-                        throw SuiError.DataSerializerError.ParseError("expect the argument to be an object id string, got {\(inputValue.value())}")
+                    switch inputValue {
+                    case .Str(let string):
+                        objectsToResolve.append(SuiObjectsToResolve(id: string, input: self.inputs![Int(input.index)], normalizedType: param))
+                    case .CallArg(let suiCallArg):
+                        switch suiCallArg {
+                        case .Object(let suiObjectArg):
+                            switch suiObjectArg {
+                            case .ImmOrOwned(let suiObjectRef):
+                                objectsToResolve.append(SuiObjectsToResolve(id: suiObjectRef.objectId.value, input: self.inputs![Int(input.index)], normalizedType: param))
+                            case .Shared(let suiSharedObjectRef):
+                                objectsToResolve.append(SuiObjectsToResolve(id: suiSharedObjectRef.objectId.value, input: self.inputs![Int(input.index)], normalizedType: param))
+                            }
+                        default:
+                            continue
+                        }
+                    default:
+                        continue
                     }
-                    objectsToResolve.append(SuiObjectsToResolve(id: value, input: self.inputs![Int(input.index)], normalizedType: param))
-                    continue
                 }
                 if case .MoveNormalizedTypeParameterType(_) = param{
                     guard let value = inputValue.value() as? String else {

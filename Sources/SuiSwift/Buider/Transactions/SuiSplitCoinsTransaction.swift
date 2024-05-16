@@ -30,7 +30,7 @@ public struct SuiSplitCoinsTransaction: SuiTransactionStruct{
             if let pureDic = dic["value"] as? [String: AnyObject], let value = pureDic["Pure"] as? [UInt8]{
                 return SuiTransactionArgumentType.TransactionBlockInput(.init(index: UInt16(index), value: .CallArg(.Pure(value)), type: type))
             }
-            throw SuiError.BuildTransactionError.ConstructTransactionDataError("Invalid SplitCoins ArgumentType")
+            return SuiTransactionArgumentType.TransactionBlockInput(.init(index: UInt16(index)))
         })
     }
     public func inner() -> SuiTransactionInner {
