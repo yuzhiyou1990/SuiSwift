@@ -69,7 +69,7 @@ extension SuiJsonValue{
            }
            if case .CallArg(let arg) = self{
                if case .Pure(let bytes) = arg{
-                   try UInt8(BigUInt(Data(bytes)).description)?.serialize(to: &writer)
+                   writer.append(Data(bytes))
                }
            }
        case "U64":
@@ -78,7 +78,7 @@ extension SuiJsonValue{
            }
            if case .CallArg(let arg) = self{
                if case .Pure(let bytes) = arg{
-                   try UInt64(BigUInt(Data(bytes)).description)?.serialize(to: &writer)
+                   writer.append(Data(bytes))
                }
            }
        case "U128":
@@ -87,7 +87,7 @@ extension SuiJsonValue{
            }
            if case .CallArg(let arg) = self{
                if case .Pure(let bytes) = arg{
-                   try UInt128(stringLiteral: BigUInt(Data(bytes)).description).serialize(to: &writer)
+                   writer.append(Data(bytes))
                }
            }
        case "Address":
@@ -101,7 +101,7 @@ extension SuiJsonValue{
            }
            if case .CallArg(let arg) = self{
                if case .Pure(let bytes) = arg{
-                   try UInt16(BigUInt(Data(bytes)).description)?.serialize(to: &writer)
+                   writer.append(Data(bytes))
                }
            }
        case "U32":
@@ -110,7 +110,7 @@ extension SuiJsonValue{
            }
            if case .CallArg(let arg) = self{
                if case .Pure(let bytes) = arg{
-                   try UInt32(BigUInt(Data(bytes)).description)?.serialize(to: &writer)
+                   writer.append(Data(bytes))
                }
            }
        case "U256":
@@ -119,7 +119,7 @@ extension SuiJsonValue{
            }
            if case .CallArg(let arg) = self{
                if case .Pure(let bytes) = arg{
-                   try UInt256(stringLiteral: BigUInt(Data(bytes)).description).serialize(to: &writer)
+                   writer.append(Data(bytes))
                }
            }
        default:

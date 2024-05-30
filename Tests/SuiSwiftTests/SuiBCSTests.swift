@@ -74,4 +74,238 @@ final class SuiBCSTests: XCTestCase {
     func ref() -> SuiObjectRef{
         return SuiObjectRef(digest: "1Bhh3pU9gLXZhoVxkr5wyg9sX6", objectId: "3558000000000000000000000000000000000000000000000000000000000000", version: 9113)
     }
+    
+    
+    
+    func testDappParse() throws {
+        let reqeustExpectation = expectation(description: #function)
+        let byteArray: [UInt8] = [0, 225, 245, 5, 0, 0, 0, 0]
+        if let utf8String = String(bytes: byteArray, encoding: .utf8) {
+            print(utf8String)
+        } else {
+            print("Cannot convert to UTF-8 string.")
+        }
+        let json = """
+        {
+            "version": 1,
+            "sender": "0xca5b67735321f0fd05554f376cc600af5feba667a6dbb5fc4418b913a4a63fcd",
+            "expiration": {
+                "None": true
+            },
+            "gasConfig": {
+                "payment": [{
+                    "objectId": "0x036a9f9710bb943c31d420358bcc0914261edab7676316dde21f3de4b913ea72",
+                    "version": "104316883",
+                    "digest": "7zN952zzdkxPmEq7mm4sdESMGhM1cnctV2qr1y2Qf5xR"
+                }],
+                "owner": "0xca5b67735321f0fd05554f376cc600af5feba667a6dbb5fc4418b913a4a63fcd",
+                "price": "751",
+                "budget": "2584088"
+            },
+            "inputs": [{
+                "kind": "Input",
+                "value": {
+                    "Pure": [0, 202, 154, 59, 0, 0, 0, 0]
+                },
+                "index": 0,
+                "type": "pure"
+            }, {
+                "kind": "Input",
+                "value": {
+                    "Object": {
+                        "ImmOrOwned": {
+                            "objectId": "0x33353f2bcbd6aaaf86e54235e99f9c1211a3faeb78eb25c8f2c9c8f8badd7259",
+                            "version": "104316883",
+                            "digest": "73ohmqM8K5T5Z9BBTzXqKrByKq3HpHi13JtwHW5kd5H9"
+                        }
+                    }
+                },
+                "index": 1,
+                "type": "object"
+            }, {
+                "kind": "Input",
+                "value": {
+                    "Object": {
+                        "Shared": {
+                            "objectId": "0xdaa46292632c3c4d8f31f23ea0f9b36a28ff3677e9684980e4438403a67a3d8f",
+                            "initialSharedVersion": "1574190",
+                            "mutable": false
+                        }
+                    }
+                },
+                "index": 2,
+                "type": "object"
+            }, {
+                "kind": "Input",
+                "value": {
+                    "Object": {
+                        "Shared": {
+                            "objectId": "0x2e041f3fd93646dcc877f783c1f2b7fa62d30271bdef1f21ef002cebf857bded",
+                            "initialSharedVersion": "1964496",
+                            "mutable": true
+                        }
+                    }
+                },
+                "index": 3,
+                "type": "object"
+            }, {
+                "kind": "Input",
+                "value": {
+                    "Pure": [0]
+                },
+                "index": 4,
+                "type": "pure"
+            }, {
+                "kind": "Input",
+                "value": {
+                    "Pure": [1]
+                },
+                "index": 5,
+                "type": "pure"
+            }, {
+                "kind": "Input",
+                "value": {
+                    "Pure": [0, 202, 154, 59, 0, 0, 0, 0]
+                },
+                "index": 6,
+                "type": "pure"
+            }, {
+                "kind": "Input",
+                "value": {
+                    "Pure": [175, 51, 27, 168, 50, 127, 187, 53, 177, 196, 254, 255, 0, 0, 0, 0]
+                },
+                "index": 7,
+                "type": "pure"
+            }, {
+                "kind": "Input",
+                "value": {
+                    "Pure": [0]
+                },
+                "index": 8,
+                "type": "pure"
+            }, {
+                "kind": "Input",
+                "value": {
+                    "Object": {
+                        "Shared": {
+                            "objectId": "0x0000000000000000000000000000000000000000000000000000000000000006",
+                            "initialSharedVersion": "1",
+                            "mutable": false
+                        }
+                    }
+                },
+                "index": 9,
+                "type": "object"
+            }, {
+                "kind": "Input",
+                "value": {
+                    "Pure": [9, 88, 145, 128, 2, 0, 0, 0]
+                },
+                "index": 10,
+                "type": "pure"
+            }],
+            "transactions": [{
+                "kind": "SplitCoins",
+                "coin": {
+                    "kind": "GasCoin"
+                },
+                "amounts": [{
+                    "kind": "Input",
+                    "index": 0
+                }]
+            }, {
+                "kind": "MoveCall",
+                "target": "0x0000000000000000000000000000000000000000000000000000000000000002::coin::zero",
+                "arguments": [],
+                "typeArguments": ["0x06864a6f921804860930db6ddbe2e16acdf8504495ea7481637a1c8b9a8fe54b::cetus::CETUS"]
+            }, {
+                "kind": "MoveCall",
+                "target": "0x6f5e582ede61fe5395b50c4a449ec11479a54d7ff8e0158247adfda60d98970b::router::swap",
+                "arguments": [{
+                    "kind": "Input",
+                    "index": 2
+                }, {
+                    "kind": "Input",
+                    "index": 3
+                }, {
+                    "kind": "Result",
+                    "index": 1
+                }, {
+                    "kind": "Result",
+                    "index": 0
+                }, {
+                    "kind": "Input",
+                    "index": 4
+                }, {
+                    "kind": "Input",
+                    "index": 5
+                }, {
+                    "kind": "Input",
+                    "index": 6
+                }, {
+                    "kind": "Input",
+                    "index": 7
+                }, {
+                    "kind": "Input",
+                    "index": 8
+                }, {
+                    "kind": "Input",
+                    "index": 9
+                }],
+                "typeArguments": ["0x06864a6f921804860930db6ddbe2e16acdf8504495ea7481637a1c8b9a8fe54b::cetus::CETUS", "0x0000000000000000000000000000000000000000000000000000000000000002::sui::SUI"]
+            }, {
+                "kind": "MoveCall",
+                "target": "0x6f5e582ede61fe5395b50c4a449ec11479a54d7ff8e0158247adfda60d98970b::router::check_coin_threshold",
+                "arguments": [{
+                    "kind": "NestedResult",
+                    "index": 2,
+                    "resultIndex": 0
+                }, {
+                    "kind": "Input",
+                    "index": 10
+                }],
+                "typeArguments": ["0x06864a6f921804860930db6ddbe2e16acdf8504495ea7481637a1c8b9a8fe54b::cetus::CETUS"]
+            }, {
+                "kind": "MergeCoins",
+                "destination": {
+                    "kind": "Input",
+                    "index": 1
+                },
+                "sources": [{
+                    "kind": "NestedResult",
+                    "index": 2,
+                    "resultIndex": 0
+                }]
+            }, {
+                "kind": "MergeCoins",
+                "destination": {
+                    "kind": "GasCoin"
+                },
+                "sources": [{
+                    "kind": "NestedResult",
+                    "index": 2,
+                    "resultIndex": 1
+                }]
+            }]
+        }
+        """
+        guard let jsonData = json.data(using: .utf8) else {
+            print("Failed to convert string to data.")
+            return
+        }
+        let dictionary = try JSONSerialization.jsonObject(with: jsonData, options: []) as? [String: Any]
+        DispatchQueue.global().async {
+            do{
+                let suiTransactionBuilder = try SuiTransactionBuilder.ParseDAppTransaction(dic: dictionary ?? [:])
+                _ = try suiTransactionBuilder.prepare(provider: .init(url: URL(string: "https://wallet-rpc.mainnet.sui.io")!)).wait()
+                let buildData = try suiTransactionBuilder.build()
+                debugPrint(suiTransactionBuilder)
+                reqeustExpectation.fulfill()
+            } catch {
+                debugPrint(error.localizedDescription)
+                reqeustExpectation.fulfill()
+            }
+        }
+        wait(for: [reqeustExpectation], timeout: 30)
+    }
 }

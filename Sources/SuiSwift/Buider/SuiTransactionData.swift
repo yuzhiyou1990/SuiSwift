@@ -183,20 +183,30 @@ extension SuiTransactionBuilder{
         }
         for (index, param) in apiMoveParams.enumerated() {
             if case .TransactionBlockInput(let input) = originMoveArguments[index], let inputValue = inputs[Int(input.index)].value {
-                if case .CallArg(_) = inputValue {
-                    continue
-                }
                 let serType = try SuiTransactionBuilder.getPureSerializationType(normalizedType: param, argVal: inputValue)
                 if let pureType = serType.flatMap({ $0 }) {
                     self.inputs?[Int(input.index)].value = .CallArg(.Pure(pureType))
                     continue
                 }
                 if let _ = param.extractStructTag(){
-                    guard let value = inputValue.value() as? String else {
-                        throw SuiError.DataSerializerError.ParseError("expect the argument to be an object id string, got {\(inputValue.value())}")
+                    switch inputValue {
+                    case .Str(let string):
+                        objectsToResolve.append(SuiObjectsToResolve(id: string, input: self.inputs![Int(input.index)], normalizedType: param))
+                    case .CallArg(let suiCallArg):
+                        switch suiCallArg {
+                        case .Object(let suiObjectArg):
+                            switch suiObjectArg {
+                            case .ImmOrOwned(let suiObjectRef):
+                                objectsToResolve.append(SuiObjectsToResolve(id: suiObjectRef.objectId.value, input: self.inputs![Int(input.index)], normalizedType: param))
+                            case .Shared(let suiSharedObjectRef):
+                                objectsToResolve.append(SuiObjectsToResolve(id: suiSharedObjectRef.objectId.value, input: self.inputs![Int(input.index)], normalizedType: param))
+                            }
+                        default:
+                            continue
+                        }
+                    default:
+                        continue
                     }
-                    objectsToResolve.append(SuiObjectsToResolve(id: value, input: self.inputs![Int(input.index)], normalizedType: param))
-                    continue
                 }
                 if case .MoveNormalizedTypeParameterType(_) = param{
                     guard let value = inputValue.value() as? String else {

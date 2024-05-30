@@ -38,8 +38,8 @@ public struct SuiInputs{
         try value.serialize(to: &data)
         return .Pure(data.bytes)
     }
-    
-    public static func PureWithJsonValue(value: SuiJsonValue, type: String? = nil, data: inout Data) throws {
+    //只针对除 movecall类型的其他交易类型
+    public static func PureWithJsonValue(value: SuiJsonValue, data: inout Data) throws {
         switch value {
         case .Boolean(let bool):
             try bool.serialize(to: &data)
@@ -51,7 +51,7 @@ public struct SuiInputs{
             } else {
                 try string.serialize(to: &data)
             }
-        case .CallArg(_), .Number(_):
+        case .CallArg(_):
             break
         case .Number(let str):
             try UInt64(str)?.serialize(to: &data)
