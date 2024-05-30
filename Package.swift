@@ -15,7 +15,7 @@ let package = Package(
         .package(name: "TweetNacl", url: "https://github.com/lishuailibertine/tweetnacl-swiftwrap", from: "1.0.5"),
         .package(url: "https://github.com/krzyzanowskim/CryptoSwift", from: "1.4.2"),
         .package(url: "https://github.com/mathwallet/BIP39swift", from: "1.0.1"),
-        .package(url: "https://github.com/mxcl/PromiseKit.git", from: "6.8.4"),
+        .package(url: "https://github.com/mxcl/PromiseKit.git", from: "8.1.1"),
         .package(name: "Secp256k1Swift", url: "https://github.com/mathwallet/Secp256k1Swift.git", from: "2.0.0"),
         .package(name: "Blake2", url: "https://github.com/lishuailibertine/Blake2.swift", from: "0.1.3"),
         .package(url: "https://github.com/attaswift/BigInt", from: "5.3.0"),
