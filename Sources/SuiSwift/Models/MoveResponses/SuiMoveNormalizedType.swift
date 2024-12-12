@@ -19,8 +19,7 @@ public indirect enum SuiMoveNormalizedType: Decodable{
 extension SuiMoveNormalizedType{
     public static func isTxContext(param: SuiMoveNormalizedType) -> Bool{
         let structType = param.extractStructTag()?.structType
-        guard case .MutableReference(_) = param,
-              structType?.address == "0x2",
+        guard structType?.address == "0x2",
               structType?.module == "tx_context",
               structType?.name == "TxContext" else{
             return false
