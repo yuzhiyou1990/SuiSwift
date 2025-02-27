@@ -10,7 +10,7 @@ import AnyCodable
 
 public struct SuiPaginatedCoins: Decodable{
     public let data: [SuiCoinStruct]
-    public let nextCursor: String
+    public let nextCursor: String?
     public let hasNextPage: Bool
 }
 public struct SuiCoinBalance: Decodable{
