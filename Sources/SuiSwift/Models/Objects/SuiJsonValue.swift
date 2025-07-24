@@ -91,10 +91,17 @@ extension SuiJsonValue{
                }
            }
        case "Address":
-           guard let address = value() as? String else{
-               throw SuiError.DataSerializerError.ParseError("Serialize SuiJsonValue Error, suiTypeTag: \(type)")
+           if let address = value() as? String {
+               try SuiAddress(value: address).serialize(to: &writer)
+               return
            }
-           try SuiAddress(value: address).serialize(to: &writer)
+           if case .CallArg(let arg) = self{
+               if case .Pure(let bytes) = arg{
+                   writer.append(Data(bytes))
+               }
+               return
+           }
+           throw SuiError.DataSerializerError.ParseError("Serialize SuiJsonValue Error, suiTypeTag: \(type)")
        case "U16":
            if let number = value() as? String{
                try UInt16(number)?.serialize(to: &writer)
