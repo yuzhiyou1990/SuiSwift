@@ -19,7 +19,7 @@ let package = Package(
         .package(name: "Secp256k1Swift", url: "https://github.com/mathwallet/Secp256k1Swift.git", from: "2.0.0"),
         .package(name: "Blake2", url: "https://github.com/lishuailibertine/Blake2.swift", from: "0.1.3"),
         .package(url: "https://github.com/attaswift/BigInt", from: "5.3.0"),
-        .package(url: "https://github.com/Flight-School/AnyCodable.git", .exact("0.6.1"))
+        .package(url: "https://github.com/Flight-School/AnyCodable.git", from: "0.6.1")
         // Dependencies declare other packages that this package depends on.
         // .package(url: /* package url */, from: "1.0.0"),
     ],
